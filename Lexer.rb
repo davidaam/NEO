@@ -6,7 +6,7 @@ class Lexer
   attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
-      'TkId' => /$([a-zA-Z][a-zA-Z_]*)$/,
+      'TkId' => /([a-zA-Z][a-zA-Z_]*)/,
       'TkNum' => /(\d+)/
   }
 
@@ -27,17 +27,16 @@ class Lexer
     @tokens = []
     @errores = []
     @nroLinea = 1
-    @lastOffset = 0
 
     # Leer archuivo y eliminar comentarios antes de procesarlo (preservando las lineas)
     text = File.read(archivo)
     text.scan /(%\{.*?\}%)/m do
-      puts $1
       iniComentario = $~.offset(1)[0]
       finComentario = $~.offset(1)[1]
       text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
     end
-    puts text
+    @text = text
+    puts @text
       # Crear las subclases de token a partir de las reglas
     REGLAS.each do |nombreToken,regex|
       Object.const_set(nombreToken,Class.new(Token))
@@ -51,35 +50,80 @@ class Lexer
     end
   end
 
-  def addToken(tk,linea,columna,valor=nil)
-    tkClass = Object.const_get(tk)
-    @tokens << tkClass.new(linea,columna,valor)
+  def createToken(tk,linea,posicion,valor=nil)
+    Object.const_get(tk).new(linea,posicion+1,valor)
   end
 
-  def tokenizeWord(palabra,pos)
+  def tokenizeWord(palabra,pos,rec=false)
+    if palabra == nil
+      return nil
+    end
+    token = nil
+    inicioTk = pos
+    finTk = inicioTk + palabra.length
     # Primero chequeamos si es una palabra reservada
     if PALABRAS_RESERVADAS.include? palabra
+      token = self.createToken("Tk#{palabra.capitalize}",@nroLinea,inicioTk)
+    else
+      # Luego chequeo si coincide con alguna regla
+      REGLAS.each do |tk,regex|
+        if palabra.match(regex) != nil
+          inicioTk = $~.offset(0)[0]
+          finTk = $~.offset(0)[1]
+          # De haber un valor, se guarda en $1
+          token = self.createToken(tk,@nroLinea,pos+inicioTk,$1)
+          break
+        end
+      end
 
+      # Si no he detectado algun token hasta el momento, chequeo si hay un simbolo
+      if token == nil
+        SIMBOLOS.each do |simbolo,nombre|
+          if palabra.match(Regexp.escape(simbolo)) != nil
+            inicioTk = $~.offset(0)[0]
+            finTk = $~.offset(0)[1]
+            token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
+            break
+          end
+        end
+      end
     end
-  end
+    # Si hasta este punto no detecté ningún token, hay un error
+    if token == nil
+      @errores << "Error en linea #{@nroLinea} columna #{inicioTk}"
+    else
+      # Si detecté un token, veo si tengo algo tokenizable a los lados recursivamente
+      palabraIzq = palabra[pos...inicioTk] if inicioTk > 0
+      palabraDer = palabra[finTk...palabra.length]
 
+      tkIzq = self.tokenizeWord(palabraIzq,pos,true)
+      tkDer = self.tokenizeWord(palabraDer,finTk,true)
+
+      @tokens << tkIzq if rec and tkIzq != nil
+      @tokens << token
+      @tokens << tkDer if rec and tkDer != nil
+    end
+    return token
+  end
 
   def tokenizeLine(line)
     # Matcheamos todo lo que no sean espacios
     line.scan(/\S+/) do |palabra|
-      pos = $~.offset(0)[0]
-      self.tokenizeWord(palabra,pos)
+      inicioTk = $~.offset(0)[0]
+      self.tokenizeWord(palabra,inicioTk)
     end
     @nroLinea += 1
   end
 
-  def tokenizeAll(text)
-    text.split("\n") do |linea|
+  def tokenize
+    @text.lines do |linea|
       self.tokenizeLine(linea)
-      @linea += 1
     end
+    puts @tokens
   end
 end
 
 l = Lexer.new("ejemplo.neo")
+l.tokenize
 
+l.tokens

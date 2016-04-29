@@ -27,7 +27,7 @@ class Lexer
       "+" => "Suma",
       "-" => "Resta",
       "*" => "Mult",
-      #"/" => "Div",
+      "/" => "Div",
       "%" => "Mod",
       "/\\" => "Conjuncion",
       "\\/" => "Disyuncion",
@@ -219,7 +219,6 @@ class Lexer
   end
 end
 
-l = Lexer.new("ejemplo.neo")
+filename = ARGV[0]
+l = Lexer.new(filename)
 l.tokenize
-
-l.tokens

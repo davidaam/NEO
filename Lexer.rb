@@ -36,6 +36,8 @@ class Lexer
     end
     @text = text
     # Crear las subclases de token a partir de las reglas
+    puts @text
+      # Crear las subclases de token a partir de las reglas
     REGLAS.each do |nombreToken,regex|
       Object.const_set(nombreToken,Class.new(Token))
     end
@@ -54,13 +56,14 @@ class Lexer
 
   def tokenizeWord(palabra,pos,rec=false)
     # Condición de parada de la recursión
-    if palabra == nil or palabra.gsub(/\x00/,'').empty?
+    if palabra == nil or palabra.empty?
       return nil
     end
 
     token = nil
     inicioTk = pos
     finTk = inicioTk + palabra.length
+
     # Primero chequeamos si es una palabra reservada
     if PALABRAS_RESERVADAS.include? palabra
       token = self.createToken("Tk#{palabra.capitalize}",@nroLinea,inicioTk)
@@ -115,6 +118,7 @@ class Lexer
 
   def tokenizeLine(line)
     # Matcheamos todo lo que no sean espacios
+    line.gsub!(/\x00/,'')
     line.scan(/\S+/) do |palabra|
       inicioTk = $~.offset(0)[0]
       self.tokenizeWord(palabra,inicioTk)

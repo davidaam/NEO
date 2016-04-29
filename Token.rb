@@ -9,9 +9,9 @@ class Token
 
   def to_s
     if @valor
-      "#{self.class}(#{@valor}) #{@linea}:#{@columna}"
+      "#{self.class}(#{@valor}): Linea #{@linea}, Columna #{@columna}"
     else
-      "#{self.class} #{@linea}:#{@columna}"
+      "#{self.class}: Linea #{@linea}, Columna #{@columna}"
     end
   end
   def hola

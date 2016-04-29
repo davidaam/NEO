@@ -55,20 +55,26 @@ class Lexer
   end
 
   def tokenizeWord(palabra,pos,rec=false)
+    print "\n ================ \n Linea #{@nroLinea} \n ================ \n" 
     if palabra == nil
+      puts "\n 1)la parabra era nula\n" # ESTO NO ES AUTO EXPLICATIVO, porque aparece tanto?
       return nil
     end
     token = nil
     inicioTk = pos
     finTk = inicioTk + palabra.length
     # Primero chequeamos si es una palabra reservada
+    print "2) EL POS ES: #{pos} LA PALABRA ES #{palabra}: "
     if PALABRAS_RESERVADAS.include? palabra
       token = self.createToken("Tk#{palabra.capitalize}",@nroLinea,inicioTk)
+      puts "es reservada\n"
     else
       # Luego chequeo si coincide con alguna regla
       REGLAS.each do |tk,regex|
         if palabra.match(regex) != nil
-          inicioTk = $~.offset(0)[0]
+          puts "Es regla\n"
+          inicioTk = $~.offset(0)[0]  ####################################PORQUE NO LO TENEMOS YA? ESTO SIEMPRE ES 0
+          puts "EL NUEVO INICIO QUE AL PARECER ES DISTINTO DEL POST ES #{inicioTk}"
           finTk = $~.offset(0)[1]
           # De haber un valor, se guarda en $1
           token = self.createToken(tk,@nroLinea,pos+inicioTk,$1)
@@ -80,6 +86,7 @@ class Lexer
       if token == nil
         SIMBOLOS.each do |simbolo,nombre|
           if palabra.match(Regexp.escape(simbolo)) != nil
+            puts "Es simbolo\n"
             inicioTk = $~.offset(0)[0]
             finTk = $~.offset(0)[1]
             token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
@@ -91,6 +98,7 @@ class Lexer
     # Si hasta este punto no detecté ningún token, hay un error
     if token == nil
       @errores << "Error en linea #{@nroLinea} columna #{inicioTk}"
+      puts "\n3) EROOR LA palabra era <#{palabra}> en la linea #{@nroLinea}"
     else
       # Si detecté un token, veo si tengo algo tokenizable a los lados recursivamente
       palabraIzq = palabra[pos...inicioTk] if inicioTk > 0

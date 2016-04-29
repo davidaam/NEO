@@ -27,10 +27,11 @@ class Lexer
       "+" => "Suma",
       "-" => "Resta",
       "*" => "Mult",
-      #"/" => "Div ",
+      #"/" => "Div",
       "%" => "Mod",
       "/\\" => "Conjuncion",
       "\\/" => "Disyuncion",
+      "not" => "Negacion",
       "<" => "Menor",
       "<=" => "MenorIgual",
       ">" => "Mayor",
@@ -96,26 +97,25 @@ class Lexer
         token = self.createToken("Tk#{laPalabra.capitalize}",@nroLinea,inicioTk)
         puts "es reservada\n"
       else
-        # Luego chequeo si coincide con alguna regla (numero o variable)
-        REGLAS.each do |tk,regex|
-          if laPalabra.match(regex) != nil
-            puts "Es regla de tipo #{tk}\n"
-            #inicioTk = $~.offset(0)[0]
-            #finTk = $~.offset(0)[1]
-            # De haber un valor, se guarda en $1
-            token = self.createToken(tk,@nroLinea,inicioTk,$1)
-            break
-          end
-        end
-
-        # Si no he detectado algun token hasta el momento, chequeo si es un simbolo valido
-        if token == nil
-          SIMBOLOS.each do |simbolo,nombre|
+        # Luego chequeo si es un simbolo
+        SIMBOLOS.each do |simbolo,nombre|
             if laPalabra.match(Regexp.escape(simbolo)) != nil
               puts "Es el simbolo <#{simbolo}>\n"
               #inicioTk = $~.offset(0)[0]
               #finTk = $~.offset(0)[1]
               token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
+              break
+            end
+          end
+        # Si no he detectado algun token hasta el momento, chequeo coincide con alguna regla (numero o variable)
+        if token == nil
+          REGLAS.each do |tk,regex|
+            if laPalabra.match(regex) != nil
+              puts "Es regla de tipo #{tk}\n"
+              #inicioTk = $~.offset(0)[0]
+              #finTk = $~.offset(0)[1]
+              # De haber un valor, se guarda en $1
+              token = self.createToken(tk,@nroLinea,inicioTk,$1)
               break
             end
           end
@@ -215,7 +215,7 @@ class Lexer
     puts @tokens
 
     puts "\n\n\n=======\n PROBANDO \n==========\n"
-    self.tokenizeWord(["end!"],0)
+    self.tokenizeLine("!hola!")
   end
 end
 

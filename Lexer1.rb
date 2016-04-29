@@ -3,14 +3,15 @@ require 'set'
 load 'Token.rb'
 
 class Lexer
-  attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
+      'TkFalse' => /False/,
+      'TkTrue' => /True/,
       'TkId' => /([a-zA-Z][a-zA-Z_]*)/,
       'TkNum' => /(\d+)/
   }
 
-  PALABRAS_RESERVADAS = Set.new ["begin","with","end","int","var"]
+  PALABRAS_RESERVADAS = Set.new ["begin","end","if","with","var","char","bool","matrix","int","var"]
 
   SIMBOLOS = {
       "," => "Coma",
@@ -60,8 +61,7 @@ class Lexer
       text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
     end
     @text = text
-    puts @text
-      # Crear las subclases de token a partir de las reglas
+    # Crear las subclases de token a partir de las reglas
     REGLAS.each do |nombreToken,regex|
       Object.const_set(nombreToken,Class.new(Token))
     end
@@ -78,31 +78,21 @@ class Lexer
     Object.const_get(tk).new(linea,posicion+1,valor)
   end
 
-  def tokenizeWord(palabra,pos,rec=false)
-    #print "\n ================ \n Linea #{@nroLinea} \n ================ \n" 
-    if palabra == nil
-      #puts "\n 1)la parabra era nula\n" # ESTO NO ES AUTO EXPLICATIVO, porque aparece tanto?
-      return nil
-    end
+  def tokenizeWord(palabra,pos)
+
     conjuntoTokens = []
     finTk = pos
     palabra.each do |laPalabra|
-      puts "\nPase con #{palabra}, especificamente #{laPalabra}"
       token = nil
       inicioTk = finTk
       finTk = inicioTk + laPalabra.length
       # Primero chequeamos si es una palabra reservada
-      print "2) EL POS ES: #{pos} LA PALABRA ES #{laPalabra}: "
       if PALABRAS_RESERVADAS.include? laPalabra
         token = self.createToken("Tk#{laPalabra.capitalize}",@nroLinea,inicioTk)
-        puts "es reservada\n"
       else
         # Luego chequeo si es un simbolo
         SIMBOLOS.each do |simbolo,nombre|
             if laPalabra.match(Regexp.escape(simbolo)) != nil
-              puts "Es el simbolo <#{simbolo}>\n"
-              #inicioTk = $~.offset(0)[0]
-              #finTk = $~.offset(0)[1]
               token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
               break
             end
@@ -111,9 +101,6 @@ class Lexer
         if token == nil
           REGLAS.each do |tk,regex|
             if laPalabra.match(regex) != nil
-              puts "Es regla de tipo #{tk}\n"
-              #inicioTk = $~.offset(0)[0]
-              #finTk = $~.offset(0)[1]
               # De haber un valor, se guarda en $1
               token = self.createToken(tk,@nroLinea,inicioTk,$1)
               break
@@ -123,8 +110,7 @@ class Lexer
       end
       # Si no detecto nada es un error
       if token == nil
-        @errores << "Error en linea #{@nroLinea} columna #{inicioTk} el simbolo #{laPalabra}"
-        puts "\n3) EROOR LA palabra era <#{palabra}> en la linea #{@nroLinea}"
+        @errores << "Caracter inesperado '#{laPalabra}' en la linea #{@nroLinea} columna #{inicioTk+1}"
       else
         conjuntoTokens << token
       end
@@ -213,12 +199,19 @@ class Lexer
       self.tokenizeLine(linea)
     end
     puts @tokens
+  end
 
-    puts "\n\n\n=======\n PROBANDO \n==========\n"
-    self.tokenizeLine("!hola!")
+  def printOutput
+    if @errores.length >= 0
+      puts @errores
+    else
+      puts @tokens
+    end
+
   end
 end
 
 filename = ARGV[0]
 l = Lexer.new(filename)
 l.tokenize
+l.printOutput

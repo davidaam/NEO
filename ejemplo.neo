@@ -1,6 +1,7 @@
 with
     var contador : int
-
+begin22
+22begin
 begin
     %{ {% Asignar al contador el valor}% asasd }%
     %{ sadas %{ asdas asdasgasf

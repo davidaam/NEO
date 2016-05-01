@@ -5,20 +5,45 @@ load 'Token.rb'
 class Lexer
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
-      'TkId' => /([a-zA-Z][a-zA-Z_]*)/,
+      'TkFalse' => /False/,
+      'TkTrue' => /True/,
+      'TkId' => /([a-zA-Z]\w*)/,
       'TkNum' => /(\d+)/
   }
 
-  PALABRAS_RESERVADAS = Set.new ["begin","with","end","int","var"]
+  PALABRAS_RESERVADAS = Set.new ["begin","end","if","with","var","char","bool","matrix","int","var"]
 
   SIMBOLOS = {
-      ":" => "DosPuntos",
-      "<-" => "Asignacion",
-      "." => "Punto",
       "," => "Coma",
-      "{" => "AbreLlave",
-      "}" => "CierraLlave",
-      "%" => "Mod"
+      "." => "Punto",
+      ":" => "DosPuntos",
+      "(" => "ParAbre",
+      ")" => "ParCierra",
+      "[" => "CorcheteAbre",
+      "]" => "CorcheteCierra",
+      "{" => "LlaveAbre",
+      "}" => "LlaveCierra",
+      "->" => "Hacer",
+      "<-" => "Asignacion",
+      "+" => "Suma",
+      "-" => "Resta",
+      "*" => "Mult",
+      "/" => "Div",
+      "%" => "Mod",
+      "/\\" => "Conjuncion",
+      "\\/" => "Disyuncion",
+      "not" => "Negacion",
+      "<" => "Menor",
+      "<=" => "MenorIgual",
+      ">" => "Mayor",
+      ">=" => "MayorIgual",
+      "=" => "Igual",
+      "++" => "SiguienteCar",
+      "--" => "AnteriorCar",
+      "#" => "ValorAscii",
+      "::" => "Concatenacion",
+      "$" => "Rotacion",
+      "?" => "Trasposicion"
   }
 
 
@@ -36,8 +61,6 @@ class Lexer
     end
     @text = text
     # Crear las subclases de token a partir de las reglas
-    puts @text
-      # Crear las subclases de token a partir de las reglas
     REGLAS.each do |nombreToken,regex|
       Object.const_set(nombreToken,Class.new(Token))
     end
@@ -59,7 +82,6 @@ class Lexer
     if palabra == nil or palabra.empty?
       return nil
     end
-
     token = nil
     inicioTk = pos
     finTk = inicioTk + palabra.length
@@ -136,6 +158,7 @@ class Lexer
     if @errores.empty?
       puts @tokens
     else
+      puts @tokens
       puts @errores
     end
   end

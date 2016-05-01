@@ -7,7 +7,7 @@ class Lexer
   REGLAS = {
       'TkFalse' => /False/,
       'TkTrue' => /True/,
-      'TkId' => /([a-zA-Z][a-zA-Z_]*)/,
+      'TkId' => /([a-zA-Z]\w*)/,
       'TkNum' => /(\d+)/
   }
 
@@ -93,7 +93,7 @@ class Lexer
         # Luego chequeo si es un simbolo
         SIMBOLOS.each do |simbolo,nombre|
             if laPalabra.match(Regexp.escape(simbolo)) != nil
-              token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
+              token = self.createToken("Tk#{nombre}",@nroLinea,inicioTk)
               break
             end
           end
@@ -134,57 +134,19 @@ class Lexer
           simbolo_par = false
         else
           i = palabra.index(verificando)
-          if verificando.match(/[0-9]+[[a-zA-Z_]+[0-9]*]+/)
+
+          if verificando.match(/[0-9]+[a-zA-Z_]+/)
             verArr = verificando.sub(/[0-9]+/,' \0 ').split
             palabra = palabra[0...i] + verArr + palabra[i+1...palabra.length]
-
-          elsif verificando.match(/\//)
-            if palabra[i+1] == '\\'
-              simbolo_par = true
-              palabra[i] = '/\\'
-              palabra.delete_at(i+1)
-            end
-
-          elsif verificando.match(/\\/)
-            if palabra[i+1] == '/'
-              simbolo_par = true
-              palabra[i] = '\\/'
-              palabra.delete_at(i+1)
-            end
-
-          elsif verificando.match(/</)
-            if (palabra[i+1] == '=') or (palabra[i+1] == '-')
-              simbolo_par = true
-              palabra[i] = '<'+palabra[i+1]
-              palabra.delete_at(i+1)
-            end
-
-          elsif verificando.match(/>/)
-            if palabra[i+1] == '='
-              simbolo_par = true
-              palabra[i] = '>='
-              palabra.delete_at(i+1)
-            end
-
-          elsif verificando.match(/\+/)
-            if palabra[i+1] == '+'
-              simbolo_par = true
-              palabra[i] = '++'
-              palabra.delete_at(i+1)
-            end
-
-          elsif verificando.match(/\-/)
-            if (palabra[i+1] == '-') or (palabra[i+1] == '>')
-              simbolo_par = true
-              palabra[i] = '-' + palabra[i+1] 
-              palabra.delete_at(i+1)
-            end
-
-          elsif verificando.match(/:/)
-            if palabra[i+1] == ':'
-              simbolo_par = true
-              palabra[i] = '::'
-              palabra.delete_at(i+1)
+          else
+            simbolos_par = ["/\\","\\/","<=",">=","++","::","->","<-"]
+            simbolos_par.each do |simbolo|
+              if verificando.match Regexp.escape(simbolo[0])
+                if palabra[i+1] == simbolo[1]
+                  palabra[i] = simbolo[1]
+                  palabra.delete_at(i+1)
+                end
+              end
             end
           end
         end

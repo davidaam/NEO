@@ -1,19 +1,24 @@
-22begin3!
-begin!3
+22begin3
+begin3
 begin_3
 begin22
-22!not
-not!a
+22not
+nota
 notar
-begino!
-with!
-    var contador : int!
+begino
+with
+    var contador : int
 
-b!egin
+begin
     %{ {% Asignar al contador el valor}% asasd }%
     %{ sadas %{ asdas asdasgasf
     asd
     adsd
     }% contador <- 35.
     %{ asdas }%
+    a + b
+    a+b
+    a/b
+    a / b
+    a/ b
 end

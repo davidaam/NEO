@@ -112,7 +112,6 @@ class Lexer
       # Si no detecto nada es un error
       if token == nil
         @errores << "Error: Caracter inesperado \"#{laPalabra}\" en la fila #{@nroLinea}, columna #{inicioTk + 1}"
-        puts "Error: Caracter inesperado \"#{laPalabra}\" en la fila #{@nroLinea}, columna #{inicioTk + 1}"
       else
         conjuntoTokens << token
       end
@@ -201,22 +200,19 @@ class Lexer
       linea.gsub!(/\x00/,'')
       self.tokenizeLine(linea)
     end
-    puts @tokens
   end
 
   def printOutput
-    if @errores.length >= 0
+    if @errores.length > 0
       puts @errores
     else
       puts @tokens
     end
-
   end
+
 end
 
 filename = ARGV[0]
 l = Lexer.new(filename)
 l.tokenize
-
-l.tokens
-#l.printOutput
+l.printOutput

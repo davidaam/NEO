@@ -5,10 +5,12 @@ begin22
 22not
 nota
 notar
-begino
+beginnot
+beginot
 with
     var contador : int
 
+	hola	    
 begin
     %{ {% Asignar al contador el valor}% asasd }%
     %{ sadas %{ asdas asdasgasf

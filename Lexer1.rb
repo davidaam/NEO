@@ -6,7 +6,7 @@ class Lexer
   attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
-      'TkId' => /([a-zA-Z][a-zA-Z_]*)/,
+      'TkId' => /([a-zA-Z]\w*)/,
       'TkNum' => /(\d+)/
   }
 
@@ -87,22 +87,16 @@ class Lexer
     conjuntoTokens = []
     finTk = pos
     palabra.each do |laPalabra|
-      puts "\nPase con #{palabra}, especificamente #{laPalabra}"
       token = nil
       inicioTk = finTk
       finTk = inicioTk + laPalabra.length
       # Primero chequeamos si es una palabra reservada
-      print "2) EL POS ES: #{pos} LA PALABRA ES #{laPalabra}: "
       if PALABRAS_RESERVADAS.include? laPalabra
         token = self.createToken("Tk#{laPalabra.capitalize}",@nroLinea,inicioTk)
-        puts "es reservada\n"
       else
         # Luego chequeo si es un simbolo
         SIMBOLOS.each do |simbolo,nombre|
-            if laPalabra.match(Regexp.escape(simbolo)) != nil
-              puts "Es el simbolo <#{simbolo}>\n"
-              #inicioTk = $~.offset(0)[0]
-              #finTk = $~.offset(0)[1]
+            if (laPalabra.match(/not\z/) != nil and simbolo == "not") or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
               token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
               break
             end
@@ -111,9 +105,6 @@ class Lexer
         if token == nil
           REGLAS.each do |tk,regex|
             if laPalabra.match(regex) != nil
-              puts "Es regla de tipo #{tk}\n"
-              #inicioTk = $~.offset(0)[0]
-              #finTk = $~.offset(0)[1]
               # De haber un valor, se guarda en $1
               token = self.createToken(tk,@nroLinea,inicioTk,$1)
               break
@@ -123,8 +114,8 @@ class Lexer
       end
       # Si no detecto nada es un error
       if token == nil
-        @errores << "Error en linea #{@nroLinea} columna #{inicioTk} el simbolo #{laPalabra}"
-        puts "\n3) EROOR LA palabra era <#{palabra}> en la linea #{@nroLinea}"
+        @errores << "Error: Caracter inesperado \"#{laPalabra}\" en la fila #{@nroLinea}, columna #{inicioTk + 1}"
+        puts "Error: Caracter inesperado \"#{laPalabra}\" en la fila #{@nroLinea}, columna #{inicioTk + 1}"
       else
         conjuntoTokens << token
       end
@@ -148,8 +139,8 @@ class Lexer
           simbolo_par = false
         else
           i = palabra.index(verificando)
-          if verificando.match(/[0-9]+[[a-zA-Z_]+[0-9]*]+/)
-            verArr = verificando.sub(/[0-9]+/,' \0 ').split
+          if verificando.match(/^[0-9]+([a-zA-Z_]+[0-9]*)+/)
+            verArr = verificando.sub(/^[0-9]+/,' \0 ').split
             palabra = palabra[0...i] + verArr + palabra[i+1...palabra.length]
 
           elsif verificando.match(/\//)
@@ -210,6 +201,7 @@ class Lexer
 
   def tokenize
     @text.lines do |linea|
+      linea.gsub!(/\x00/,'')
       self.tokenizeLine(linea)
     end
     puts @tokens
@@ -219,7 +211,7 @@ class Lexer
   end
 end
 
-l = Lexer.new("ejemplo.neo")
+l = Lexer.new("ejemplo.txt")
 l.tokenize
 
 l.tokens

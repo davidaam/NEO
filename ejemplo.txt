@@ -1,0 +1,19 @@
+22begin3!
+begin!3
+begin_3
+begin22
+22!not
+not!a
+notar
+begino!
+with!
+    var contador : int!
+
+b!egin
+    %{ {% Asignar al contador el valor}% asasd }%
+    %{ sadas %{ asdas asdasgasf
+    asd
+    adsd
+    }% contador <- 35.
+    %{ asdas }%
+end

@@ -3,14 +3,16 @@ require 'set'
 load 'Token.rb'
 
 class Lexer
-  attr_reader :tokens, :errores
+  # attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
+      'TkFalse' => /False/,
+      'TkTrue' => /True/,
       'TkId' => /([a-zA-Z]\w*)/,
       'TkNum' => /(\d+)/
   }
 
-  PALABRAS_RESERVADAS = Set.new ["begin","with","end","int","var"]
+  PALABRAS_RESERVADAS = Set.new ["begin","end","if","with","var","char","bool","matrix","int","var"]
 
   SIMBOLOS = {
       "," => "Coma",
@@ -27,7 +29,7 @@ class Lexer
       "+" => "Suma",
       "-" => "Resta",
       "*" => "Mult",
-      #"/" => "Div",
+      "/" => "Div",
       "%" => "Mod",
       "/\\" => "Conjuncion",
       "\\/" => "Disyuncion",
@@ -60,8 +62,7 @@ class Lexer
       text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
     end
     @text = text
-    puts @text
-      # Crear las subclases de token a partir de las reglas
+    # Crear las subclases de token a partir de las reglas
     REGLAS.each do |nombreToken,regex|
       Object.const_set(nombreToken,Class.new(Token))
     end
@@ -78,12 +79,8 @@ class Lexer
     Object.const_get(tk).new(linea,posicion+1,valor)
   end
 
-  def tokenizeWord(palabra,pos,rec=false)
-    #print "\n ================ \n Linea #{@nroLinea} \n ================ \n" 
-    if palabra == nil
-      #puts "\n 1)la parabra era nula\n" # ESTO NO ES AUTO EXPLICATIVO, porque aparece tanto?
-      return nil
-    end
+  def tokenizeWord(palabra,pos)
+
     conjuntoTokens = []
     finTk = pos
     palabra.each do |laPalabra|
@@ -205,13 +202,21 @@ class Lexer
       self.tokenizeLine(linea)
     end
     puts @tokens
+  end
 
-    puts "\n\n\n=======\n PROBANDO \n==========\n"
-    self.tokenizeLine("!hola!")
+  def printOutput
+    if @errores.length >= 0
+      puts @errores
+    else
+      puts @tokens
+    end
+
   end
 end
 
-l = Lexer.new("ejemplo.txt")
+filename = ARGV[0]
+l = Lexer.new(filename)
 l.tokenize
 
 l.tokens
+#l.printOutput

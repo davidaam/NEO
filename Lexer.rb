@@ -3,7 +3,6 @@ require 'set'
 load 'Token.rb'
 
 class Lexer
-  attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
       'TkId' => /([a-zA-Z][a-zA-Z_]*)/,
@@ -36,6 +35,7 @@ class Lexer
       text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
     end
     @text = text
+    # Crear las subclases de token a partir de las reglas
     puts @text
       # Crear las subclases de token a partir de las reglas
     REGLAS.each do |nombreToken,regex|
@@ -55,26 +55,23 @@ class Lexer
   end
 
   def tokenizeWord(palabra,pos,rec=false)
-    print "\n ================ \n Linea #{@nroLinea} \n ================ \n" 
-    if palabra == nil
-      puts "\n 1)la parabra era nula\n" # ESTO NO ES AUTO EXPLICATIVO, porque aparece tanto?
+    # Condición de parada de la recursión
+    if palabra == nil or palabra.empty?
       return nil
     end
+
     token = nil
     inicioTk = pos
     finTk = inicioTk + palabra.length
+
     # Primero chequeamos si es una palabra reservada
-    print "2) EL POS ES: #{pos} LA PALABRA ES #{palabra}: "
     if PALABRAS_RESERVADAS.include? palabra
       token = self.createToken("Tk#{palabra.capitalize}",@nroLinea,inicioTk)
-      puts "es reservada\n"
     else
-      # Luego chequeo si coincide con alguna regla
+      # Luego chequeo si coincide con alguna "regla"
       REGLAS.each do |tk,regex|
         if palabra.match(regex) != nil
-          puts "Es regla\n"
-          inicioTk = $~.offset(0)[0]  ####################################PORQUE NO LO TENEMOS YA? ESTO SIEMPRE ES 0
-          puts "EL NUEVO INICIO QUE AL PARECER ES DISTINTO DEL POST ES #{inicioTk}"
+          inicioTk = $~.offset(0)[0]
           finTk = $~.offset(0)[1]
           # De haber un valor, se guarda en $1
           token = self.createToken(tk,@nroLinea,pos+inicioTk,$1)
@@ -83,10 +80,9 @@ class Lexer
       end
 
       # Si no he detectado algun token hasta el momento, chequeo si hay un simbolo
-      if token == nil
+      if not token
         SIMBOLOS.each do |simbolo,nombre|
           if palabra.match(Regexp.escape(simbolo)) != nil
-            puts "Es simbolo\n"
             inicioTk = $~.offset(0)[0]
             finTk = $~.offset(0)[1]
             token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
@@ -96,26 +92,33 @@ class Lexer
       end
     end
     # Si hasta este punto no detecté ningún token, hay un error
-    if token == nil
-      @errores << "Error en linea #{@nroLinea} columna #{inicioTk}"
-      puts "\n3) EROOR LA palabra era <#{palabra}> en la linea #{@nroLinea}"
+    if not token
+      @errores << "Caracter inesperado '#{palabra}' en linea #{@nroLinea} columna #{inicioTk}"
     else
-      # Si detecté un token, veo si tengo algo tokenizable a los lados recursivamente
-      palabraIzq = palabra[pos...inicioTk] if inicioTk > 0
+      # Obtengo lo que me queda a los lados del token matcheado
+      palabraIzq = palabra[0...inicioTk] if inicioTk != pos
       palabraDer = palabra[finTk...palabra.length]
+      # Obtengo la lista de tokens a la izquierda y derecha de la palabra dada
+      tokensIzq = self.tokenizeWord(palabraIzq,pos,true)
+      tokensDer = self.tokenizeWord(palabraDer,pos+finTk,true)
 
-      tkIzq = self.tokenizeWord(palabraIzq,pos,true)
-      tkDer = self.tokenizeWord(palabraDer,finTk,true)
+      # En cada llamada construimos un arreglo ordenado de los tokens que hay en la palabra dada
+      tokens = []
+      tokens << tokensIzq if tokensIzq != nil
+      tokens << token
+      tokens << tokensDer if tokensDer != nil
 
-      @tokens << tkIzq if rec and tkIzq != nil
-      @tokens << token
-      @tokens << tkDer if rec and tkDer != nil
+      # Cuando salimos del caso recursivo tengo en tokens todos los tokens que hay en la palabra, ordenados
+      if not rec
+        @tokens << tokens
+      end
     end
-    return token
+    return tokens
   end
 
   def tokenizeLine(line)
     # Matcheamos todo lo que no sean espacios
+    line.gsub!(/\x00/,'')
     line.scan(/\S+/) do |palabra|
       inicioTk = $~.offset(0)[0]
       self.tokenizeWord(palabra,inicioTk)
@@ -127,11 +130,17 @@ class Lexer
     @text.lines do |linea|
       self.tokenizeLine(linea)
     end
-    puts @tokens
+  end
+
+  def printOutput
+    if @errores.empty?
+      puts @tokens
+    else
+      puts @errores
+    end
   end
 end
 
 l = Lexer.new("ejemplo.neo")
 l.tokenize
-
-l.tokens
+l.printOutput

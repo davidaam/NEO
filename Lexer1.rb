@@ -3,6 +3,7 @@ require 'set'
 load 'Token.rb'
 
 class Lexer
+  # attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
       'TkFalse' => /False/,
@@ -92,8 +93,8 @@ class Lexer
       else
         # Luego chequeo si es un simbolo
         SIMBOLOS.each do |simbolo,nombre|
-            if laPalabra.match(Regexp.escape(simbolo)) != nil
-              token = self.createToken("Tk#{nombre}",@nroLinea,inicioTk)
+            if (laPalabra.match(/not\z/) != nil and simbolo == "not") or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
+              token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
               break
             end
           end
@@ -110,7 +111,7 @@ class Lexer
       end
       # Si no detecto nada es un error
       if token == nil
-        @errores << "Caracter inesperado '#{laPalabra}' en la linea #{@nroLinea} columna #{inicioTk+1}"
+        @errores << "Error: Caracter inesperado \"#{laPalabra}\" en la fila #{@nroLinea}, columna #{inicioTk + 1}"
       else
         conjuntoTokens << token
       end
@@ -134,9 +135,8 @@ class Lexer
           simbolo_par = false
         else
           i = palabra.index(verificando)
-
-          if verificando.match(/[0-9]+[a-zA-Z_]+/)
-            verArr = verificando.sub(/[0-9]+/,' \0 ').split
+          if verificando.match(/^[0-9]+([a-zA-Z_]+[0-9]*)+/)
+            verArr = verificando.sub(/^[0-9]+/,' \0 ').split
             palabra = palabra[0...i] + verArr + palabra[i+1...palabra.length]
           else
             simbolos_par = ["/\\","\\/","<=",">=","++","::","->","<-"]
@@ -158,19 +158,19 @@ class Lexer
 
   def tokenize
     @text.lines do |linea|
+      linea.gsub!(/\x00/,'')
       self.tokenizeLine(linea)
     end
-    puts @tokens
   end
 
   def printOutput
-    if @errores.length >= 0
+    if @errores.length > 0
       puts @errores
     else
       puts @tokens
     end
-
   end
+
 end
 
 filename = ARGV[0]

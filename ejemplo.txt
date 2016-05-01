@@ -1,7 +1,14 @@
+22begin3
+begin3
+begin_3
+begin22
+22not
+nota
+notar
+begino
 with
     var contador : int
-begin22
-22begin
+
 begin
     %{ {% Asignar al contador el valor}% asasd }%
     %{ sadas %{ asdas asdasgasf
@@ -9,4 +16,9 @@ begin
     adsd
     }% contador <- 35.
     %{ asdas }%
+    a + b
+    a+b
+    a/b
+    a / b
+    a/ b
 end

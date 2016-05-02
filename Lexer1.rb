@@ -94,7 +94,7 @@ class Lexer
         # Luego chequeo si es un simbolo
         SIMBOLOS.each do |simbolo,nombre|
             if (laPalabra.match(/not\z/) != nil and simbolo == "not") or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
-              token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
+              token = self.createToken("Tk#{nombre}",@nroLinea,inicioTk)
               break
             end
           end
@@ -111,41 +111,35 @@ class Lexer
       end
       # Si no detecto nada es un error
       if token == nil
-        @errores << "Error: Caracter inesperado \"#{laPalabra}\" en la fila #{@nroLinea}, columna #{inicioTk + 1}"
+        @errores << TokenError.new(laPalabra,@nroLinea,inicioTk+1)
       else
         conjuntoTokens << token
       end
-      
+
     end
     conjuntoTokens.each do |token|
       @tokens << token
     end
   end
-  
+
   def tokenizeLine(line)
     # Matcheamos todo lo que no sean espacios
     line.scan(/\S+/) do |palabra|
       inicioTk = $~.offset(0)[0]
       palabra = palabra.gsub(/\W/,' \0 ').split
-
       arrTemp = Array.new(palabra)
-      simbolo_par = false
       arrTemp.each do |verificando|
-        if simbolo_par
-          simbolo_par = false
+        i = palabra.index(verificando)
+        if verificando.match(/^[0-9]+([a-zA-Z_]+[0-9]*)+/)
+          verArr = verificando.sub(/^[0-9]+/,' \0 ').split
+          palabra = palabra[0...i] + verArr + palabra[i+1...palabra.length]
         else
-          i = palabra.index(verificando)
-          if verificando.match(/^[0-9]+([a-zA-Z_]+[0-9]*)+/)
-            verArr = verificando.sub(/^[0-9]+/,' \0 ').split
-            palabra = palabra[0...i] + verArr + palabra[i+1...palabra.length]
-          else
-            simbolos_par = ["/\\","\\/","<=",">=","++","::","->","<-"]
-            simbolos_par.each do |simbolo|
-              if verificando.match Regexp.escape(simbolo[0])
-                if palabra[i+1] == simbolo[1]
-                  palabra[i] = simbolo[1]
-                  palabra.delete_at(i+1)
-                end
+          simbolos_par = ["/\\","\\/","<=",">=","++","::","->","<-"]
+          simbolos_par.each do |simbolo|
+            if verificando.match Regexp.escape(simbolo[0])
+              if palabra[i+1] == simbolo[1]
+                palabra[i] = simbolo[1]
+                palabra.delete_at(i+1)
               end
             end
           end

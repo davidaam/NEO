@@ -14,7 +14,16 @@ class Token
       "#{self.class}: Linea #{@linea}, Columna #{@columna}"
     end
   end
-  def hola
+end
 
+class TokenError
+  def initialize(caracter,linea,columna)
+    @linea = linea
+    @columna = columna
+    @caracter = caracter
+  end
+
+  def to_s
+    "Caracter inesperado '#{@caracter}' en la linea #{@linea} columna #{@columna}"
   end
 end

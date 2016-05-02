@@ -3,6 +3,9 @@ require 'set'
 load 'Token.rb'
 
 class Lexer
+
+  PALABRAS_RESERVADAS = Set.new ["begin","end","if","with","var","char","bool","matrix","int","var"]
+
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
       'TkFalse' => /False/,
@@ -10,8 +13,6 @@ class Lexer
       'TkId' => /([a-zA-Z]\w*)/,
       'TkNum' => /(\d+)/
   }
-
-  PALABRAS_RESERVADAS = Set.new ["begin","end","if","with","var","char","bool","matrix","int","var"]
 
   SIMBOLOS = {
       "," => "Coma",
@@ -86,30 +87,32 @@ class Lexer
     inicioTk = pos
     finTk = inicioTk + palabra.length
 
-    # Primero chequeamos si es una palabra reservada
-    if PALABRAS_RESERVADAS.include? palabra
-      token = self.createToken("Tk#{palabra.capitalize}",@nroLinea,inicioTk)
-    else
-      # Luego chequeo si coincide con alguna "regla"
-      REGLAS.each do |tk,regex|
-        if palabra.match(regex) != nil
-          inicioTk = $~.offset(0)[0]
-          finTk = $~.offset(0)[1]
-          # De haber un valor, se guarda en $1
-          token = self.createToken(tk,@nroLinea,pos+inicioTk,$1)
-          break
-        end
-      end
-
-      # Si no he detectado algun token hasta el momento, chequeo si hay un simbolo
-      if not token
-        SIMBOLOS.each do |simbolo,nombre|
-          if palabra.match(Regexp.escape(simbolo)) != nil
-            inicioTk = $~.offset(0)[0]
-            finTk = $~.offset(0)[1]
-            token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
+    # Luego chequeo si coincide con alguna "regla"
+    REGLAS.each do |tk,regex|
+      if palabra.match(regex) != nil
+        inicioTk = $~.offset(0)[0]
+        finTk = $~.offset(0)[1]
+        if tk == 'TkId'
+          # Primero chequeamos si es una palabra reservada
+          if PALABRAS_RESERVADAS.include? $1
+            token = self.createToken("Tk#{$1.capitalize}",@nroLinea,pos+inicioTk)
             break
           end
+        end
+        # Si no es una palabra reservada, entonces es un id, cuyo nombre está en $1
+        token = self.createToken(tk,@nroLinea,pos+inicioTk,$1)
+        break
+      end
+    end
+
+    # Si no he detectado algun token hasta el momento, chequeo si hay un simbolo
+    if not token
+      SIMBOLOS.each do |simbolo,nombre|
+        if palabra.match(Regexp.escape(simbolo)) != nil
+          inicioTk = $~.offset(0)[0]
+          finTk = $~.offset(0)[1]
+          token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
+          break
         end
       end
     end
@@ -120,6 +123,7 @@ class Lexer
       # Obtengo lo que me queda a los lados del token matcheado
       palabraIzq = palabra[0...inicioTk] if inicioTk != pos
       palabraDer = palabra[finTk...palabra.length]
+
       # Obtengo la lista de tokens a la izquierda y derecha de la palabra dada
       tokensIzq = self.tokenizeWord(palabraIzq,pos,true)
       tokensDer = self.tokenizeWord(palabraDer,pos+finTk,true)

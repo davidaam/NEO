@@ -92,7 +92,6 @@ class Lexer
   end
 
   def tokenizeWord(palabra,pos)
-
     conjuntoTokens = []
     finTk = pos
     palabra.each do |laPalabra|
@@ -139,7 +138,17 @@ class Lexer
     # Matcheamos todo lo que no sean espacios
     line.scan(/\S+/) do |palabra|
       inicioTk = $~.offset(0)[0]
-      palabra_s = palabra.gsub(/\W/,' \0 ').gsub(/' ([^']| \\ n| \\ t| \\  ' | \\  \\ ) '/,'\'\1\'').gsub(/\s+/,'')
+      # Separo todos los símbolos por espacios
+      palabra_s = palabra.gsub(/\W/,' \0 ')
+      # Elimino los espacios de los char
+      chars = palabra_s.scan(/('[ ]+([^']| \\ n| \\ t| \\  ' | \\  \\ )[ ]+')/)
+      # Por cada char elimino los espacios dentro de él
+      chars.each do |ch|
+        posChar = Regexp.last_match.offset(1)
+        ch_sin_espacios = ch[0].gsub(/\s+/,'')
+        palabra_s = palabra_s[0...posChar[0]] + "'#{ch_sin_espacios}'" + palabra_s[posChar[1]...palabra_s.length]
+      end
+      # Separo los diferentes tokens que hay en la palabra en un arreglo
       palabra = palabra_s.split
       arrTemp = Array.new(palabra)
       i = 0
@@ -169,7 +178,8 @@ class Lexer
 
   def tokenize
     @text.lines do |linea|
-      linea.gsub!(/\x00/,'')
+      # Borro todos los espacios de mas dentro de un char
+      linea.gsub!(/'[ ]*(.*?)[ ]*'/,'\'\1\'')
       self.tokenizeLine(linea)
     end
   end

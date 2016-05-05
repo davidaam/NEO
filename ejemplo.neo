@@ -5,7 +5,8 @@ begin22
 nota:nota:nota
 beginot
 beginnot
-'\''
+asd' \n'
+'\n '
 begin
     contador <- 35.
 end

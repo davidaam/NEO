@@ -2,14 +2,10 @@ with
     var contador : int
 begin22
 22begin
-nota
+nota:nota:nota
 beginot
 beginnot
+'\''
 begin
-    %{ {% Asignar al contador el valor}% asasd }%
-    %{ sadas %{ asdas asdasgasf
-    asd
-    adsd
-    }% contador <- 35.
-    %{ asdas }%
+    contador <- 35.
 end

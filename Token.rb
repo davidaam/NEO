@@ -17,13 +17,18 @@ class Token
 end
 
 class TokenError
-  def initialize(caracter,linea,columna)
+  def initialize(caracter_recibido,linea,columna,caracter_esperado=nil)
     @linea = linea
     @columna = columna
-    @caracter = caracter
+    @caracter_recibido = caracter_recibido
+    @caracter_esperado = caracter_esperado
   end
 
   def to_s
-    "Caracter inesperado '#{@caracter}' en la linea #{@linea} columna #{@columna}"
+    if @caracter_esperado
+      "Error: Esperaba \"#{@caracter_esperado}\" en la fila #{@linea}, columna #{@columna}, pero leí #{@caracter_recibido}"
+    else
+      "Error: Caracter inesperado \"#{@caracter_recibido}\" en la fila #{@linea}, columna #{@columna}"
+    end
   end
 end

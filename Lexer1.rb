@@ -6,6 +6,7 @@ class Lexer
   # attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
+      'TkCaracter' => /'([^'\\]|\\n|\\t|\\'|\\\\)'/,
       'TkFalse' => /False/,
       'TkTrue' => /True/,
       'TkId' => /([a-zA-Z]\w*)/,
@@ -62,6 +63,17 @@ class Lexer
       text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
     end
     @text = text
+    # Si luego de eliminar los comentarios, me queda un %{, significa que hay un comentario que no cierra
+    if @text.match(/%\{/) != nil
+      posInicio = $~.offset(0)[0]
+      text_arr = text.split(/\r?\n/)
+      columnaFinal = text_arr[-1].length+1
+      lineaFinal = text_arr.length
+      @text = @text[0...posInicio]
+      @errores << TokenError.new("EOF",lineaFinal,columnaFinal,"}%")
+    end
+
+
     # Crear las subclases de token a partir de las reglas
     REGLAS.each do |nombreToken,regex|
       Object.const_set(nombreToken,Class.new(Token))
@@ -95,7 +107,7 @@ class Lexer
         SIMBOLOS.each do |simbolo,nombre|
             if laPalabra == "not" or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
             #if (laPalabra.match(/^not\z/) != nil and simbolo == "not") or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
-              token = self.createToken("Tk#{nombre}",@nroLinea,pos+inicioTk)
+              token = self.createToken("Tk#{nombre}",@nroLinea,inicioTk)
               break
             end
           end
@@ -127,24 +139,28 @@ class Lexer
     # Matcheamos todo lo que no sean espacios
     line.scan(/\S+/) do |palabra|
       inicioTk = $~.offset(0)[0]
-      palabra = palabra.gsub(/\W/,' \0 ').split
+      palabra_s = palabra.gsub(/\W/,' \0 ').gsub(/' ([^']| \\ n| \\ t| \\  ' | \\  \\ ) '/,'\'\1\'').gsub(/\s+/,'')
+      palabra = palabra_s.split
       arrTemp = Array.new(palabra)
+      i = 0
       arrTemp.each do |verificando|
-        i = palabra.index(verificando)
         if verificando.match(/^[0-9]+([a-zA-Z_]+[0-9]*)+/)
           verArr = verificando.sub(/^[0-9]+/,' \0 ').split
           palabra = palabra[0...i] + verArr + palabra[i+1...palabra.length]
-        else
+          i += verArr.length-1
+        elsif i+1 < palabra.length
           simbolos_par = ["/\\","\\/","<=",">=","++","::","->","<-"]
           simbolos_par.each do |simbolo|
             if verificando.match Regexp.escape(simbolo[0])
               if palabra[i+1] == simbolo[1]
-                palabra[i] = simbolo[1]
+                palabra[i] += simbolo[1]
                 palabra.delete_at(i+1)
+                i -= 1
               end
             end
           end
         end
+        i += 1
       end
       self.tokenizeWord(palabra,inicioTk)
     end

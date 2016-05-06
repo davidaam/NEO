@@ -34,39 +34,40 @@ class Lexer
                                     "of",
                                     "while"
                                 ]
-  # Defino los símbolos del lenguaje
+  # Defino los símbolos del lenguaje, pongo de primeros los simbolos dobles para que hagan match primero
   SIMBOLOS = {
+      "/\\" => "Conjuncion",
+      "\\/" => "Disyuncion",
+      "<=" => "MenorIgual",
+      ">=" => "MayorIgual",
+      "/=" => "Desigual",
+      "++" => "SiguienteCar",
+      "--" => "AnteriorCar",
+      "::" => "Concatenacion",
+      "->" => "Hacer",
+      "<-" => "Asignacion",
+      "<" => "Menor",
+      ">" => "Mayor",
+      "=" => "Igual",
+      "#" => "ValorAscii",
+      "$" => "Rotacion",
+      "?" => "Trasposicion",
       "," => "Coma",
       "." => "Punto",
       ":" => "DosPuntos",
-    "(" => "ParAbre",
-        ")" => "ParCierra",
-        "[" => "CorcheteAbre",
-        "]" => "CorcheteCierra",
-        "{" => "LlaveAbre",
-        "}" => "LlaveCierra",
-        "->" => "Hacer",
-        "<-" => "Asignacion",
-        "+" => "Suma",
-        "-" => "Resta",
-        "*" => "Mult",
-        "/" => "Div",
-        "%" => "Mod",
-        "/\\" => "Conjuncion",
-        "\\/" => "Disyuncion",
-        "not" => "Negacion",
-        "<" => "Menor",
-        "<=" => "MenorIgual",
-        ">" => "Mayor",
-        ">=" => "MayorIgual",
-        "=" => "Igual",
-        "++" => "SiguienteCar",
-        "--" => "AnteriorCar",
-        "#" => "ValorAscii",
-        "::" => "Concatenacion",
-        "$" => "Rotacion",
-        "?" => "Trasposicion"
-    }
+      "(" => "ParAbre",
+      ")" => "ParCierra",
+      "[" => "CorcheteAbre",
+      "]" => "CorcheteCierra",
+      "{" => "LlaveAbre",
+      "}" => "LlaveCierra",
+      "+" => "Suma",
+      "-" => "Resta",
+      "*" => "Mult",
+      "/" => "Div",
+      "%" => "Mod",
+      "not" => "Negacion",
+  }
 
     def initialize(archivo)
       @tokens = []
@@ -206,7 +207,9 @@ class Lexer
           i += palabraArr.length-1
         # Si no estoy al final de la palabra, es decir, tengo algo a la derecha, chequeo si es un símbolo de dos caracteres
         elsif i+1 < palabra.length
-          simbolos_par = ["/\\","\\/","<=",">=","++","::","->","<-"]
+          # Obtengo los simbolos de tamaño 2
+          simbolos_par = SIMBOLOS.keys.select { |s| s.length == 2 }
+
           simbolos_par.each do |simbolo|
             # Por cada símbolo chequeo si la palabra chequeada es el primer caracter del símbolo, y si la siguiente
             # palabra en el arreglo es el segundo caracter del símbolo

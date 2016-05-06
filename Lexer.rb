@@ -160,9 +160,22 @@ class Lexer
 
   def printOutput
     if @errores.empty?
-      puts @tokens
+      if !@tokenes.empty?
+        linea = @tokens[0].linea
+        @tokens.each do |tk|
+          lineaAnt = linea
+          linea = tk.linea
+          if lineaAnt != linea
+            print "\n"
+          end
+          print tk
+          if lineaAnt == linea
+            print ", "
+          end
+          linea = tk.linea
+        end
+      end
     else
-      puts @tokens
       puts @errores
     end
   end
@@ -171,3 +184,6 @@ end
 l = Lexer.new("ejemplo.neo")
 l.tokenize
 l.printOutput
+
+print "hola"
+print "chao"

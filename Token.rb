@@ -1,6 +1,9 @@
 class Token
-  attr_accessor :valor
 
+  # Permito acceder a la linea y columna de un token desde fuera (es como hacerlos public)
+  attr_reader :linea, :columna
+
+  # Un token puede o no tener un valor, los token que tienen valores son TkId, TkCaracter, TkNum
   def initialize(linea,columna,valor=nil)
     @linea = linea
     @columna = columna
@@ -8,15 +11,27 @@ class Token
   end
 
   def to_s
+    # Obtengo el nombre de la clase del token que estoy imprimiendo
+    out = self.class.to_s
+    # Si el token tiene un valor le agrego '' o "" dependiendo del caso
     if @valor
-      "#{self.class}(#{@valor}): Linea #{@linea}, Columna #{@columna}"
-    else
-      "#{self.class}: Linea #{@linea}, Columna #{@columna}"
+      if out == "TkCaracter"
+        out += "('#{@valor}')"
+      elsif out == "TkId"
+        out += "(\"#{@valor}\")"
+      elsif out == "TkNum"
+        out += "(#{@valor})"
+      end
     end
+    # Agrego la posición del token
+    out += " #{@linea} #{@columna}"
+    return out
   end
 end
 
 class TokenError
+  # Los errores pueden ser simplemente de caracter inesperado, o de caracter inesperado cuando se esperaba otra cosa
+  # (por ahora lo segundo solo lo hacemos con los comentarios que no cierran)
   def initialize(caracter_recibido,linea,columna,caracter_esperado=nil)
     @linea = linea
     @columna = columna

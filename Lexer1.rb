@@ -1,99 +1,129 @@
+#!/usr/bin/ruby
+
 require 'set'
 
 load 'Token.rb'
 
 class Lexer
-  # attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
-      'TkCaracter' => /'([^'\\]|\\n|\\t|\\'|\\\\)'/,
-      'TkFalse' => /False/,
-      'TkTrue' => /True/,
-      'TkId' => /([a-zA-Z]\w*)/,
-      'TkNum' => /(\d+)/
+      'TkCaracter' => /'([^'\\]|\\n|\\t|\\'|\\\\)'$/,
+      'TkFalse' => /false$/,
+      'TkTrue' => /true$/,
+      'TkId' => /([a-zA-Z]\w*)$/,
+      'TkNum' => /(\d+)$/
   }
-
-  PALABRAS_RESERVADAS = Set.new ["begin","end","if","with","var","char","bool","matrix","int","var"]
-
+  # Defino las palabras reservadas del lenguaje
+  PALABRAS_RESERVADAS = Set.new [
+                                    "begin",
+                                    "end",
+                                    "if",
+                                    "with",
+                                    "var",
+                                    "char",
+                                    "bool",
+                                    "matrix",
+                                    "int",
+                                    "print",
+                                    "otherwise",
+                                    "for",
+                                    "read",
+                                    "step",
+                                    "from",
+                                    "to",
+                                    "of",
+                                    "while"
+                                ]
+  # Defino los símbolos del lenguaje
   SIMBOLOS = {
       "," => "Coma",
       "." => "Punto",
       ":" => "DosPuntos",
-      "(" => "ParAbre",
-      ")" => "ParCierra",
-      "[" => "CorcheteAbre",
-      "]" => "CorcheteCierra",
-      "{" => "LlaveAbre",
-      "}" => "LlaveCierra",
-      "->" => "Hacer",
-      "<-" => "Asignacion",
-      "+" => "Suma",
-      "-" => "Resta",
-      "*" => "Mult",
-      "/" => "Div",
-      "%" => "Mod",
-      "/\\" => "Conjuncion",
-      "\\/" => "Disyuncion",
-      "not" => "Negacion",
-      "<" => "Menor",
-      "<=" => "MenorIgual",
-      ">" => "Mayor",
-      ">=" => "MayorIgual",
-      "=" => "Igual",
-      "++" => "SiguienteCar",
-      "--" => "AnteriorCar",
-      "#" => "ValorAscii",
-      "::" => "Concatenacion",
-      "$" => "Rotacion",
-      "?" => "Trasposicion"
-  }
+    "(" => "ParAbre",
+        ")" => "ParCierra",
+        "[" => "CorcheteAbre",
+        "]" => "CorcheteCierra",
+        "{" => "LlaveAbre",
+        "}" => "LlaveCierra",
+        "->" => "Hacer",
+        "<-" => "Asignacion",
+        "+" => "Suma",
+        "-" => "Resta",
+        "*" => "Mult",
+        "/" => "Div",
+        "%" => "Mod",
+        "/\\" => "Conjuncion",
+        "\\/" => "Disyuncion",
+        "not" => "Negacion",
+        "<" => "Menor",
+        "<=" => "MenorIgual",
+        ">" => "Mayor",
+        ">=" => "MayorIgual",
+        "=" => "Igual",
+        "++" => "SiguienteCar",
+        "--" => "AnteriorCar",
+        "#" => "ValorAscii",
+        "::" => "Concatenacion",
+        "$" => "Rotacion",
+        "?" => "Trasposicion"
+    }
 
+    def initialize(archivo)
+      @tokens = []
+      @errores = []
+      @nroLinea = 1
 
+      # Leer archivo y eliminar comentarios antes de procesarlo (preservando las lineas y columnas)
+      text = File.read(archivo)
+      text.scan (/(%\{.*?\}%)/m) do
+        # Obtengo la posición de inicio y fin del comentario
+        iniComentario = $~.offset(1)[0]
+        finComentario = $~.offset(1)[1]
+        # Por cada comentario, modifico el codigo a analizar, primero lo que está antes del comentario, luego sustituyo
+        # todos los caracteres del comentario (incluyendo las llaves y porcentajes) menos los saltos de línea por espacios
+        # (para preservar la posición de los tokens) y luego el resto del código después del comentario
+        text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
+      end
+      # Elimino los comentarios de linea
+      @text = text.gsub(/%%.*$/,'')
 
-  def initialize(archivo)
-    @tokens = []
-    @errores = []
-    @nroLinea = 1
+      # Si luego de eliminar los comentarios, me queda un %{, significa que hay un comentario que no cierra
+      if @text.match(/%\{/) != nil
+        # Obtengo la posición y linea final del archivo y agrego el error de falta cierre de comentario
+        posInicio = $~.offset(0)[0]
+        text_arr = text.split(/\r?\n/)
+        columnaFinal = text_arr[-1].length+1
+        lineaFinal = text_arr.length
+        @text = @text[0...posInicio]
+        @errores << TokenError.new("EOF",lineaFinal,columnaFinal,"}%")
+      end
 
-    # Leer archuivo y eliminar comentarios antes de procesarlo (preservando las lineas)
-    text = File.read(archivo)
-    text.scan /(%\{.*?\}%)/m do
-      iniComentario = $~.offset(1)[0]
-      finComentario = $~.offset(1)[1]
-      text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
+      # Crear las subclases de token a partir de las reglas
+      REGLAS.each do |nombreToken,regex|
+        Object.const_set(nombreToken,Class.new(Token))
+      end
+      # Crear las subclases de token a partir de las palabras reservadas
+      PALABRAS_RESERVADAS.each do |palabra|
+        Object.const_set("Tk#{palabra.capitalize}",Class.new(Token))
+      end
+      # Crear las subclases de token a partir de los símbolos
+      SIMBOLOS.values.each do |nombre|
+        Object.const_set("Tk#{nombre}",Class.new(Token))
+      end
     end
-    @text = text
-    # Si luego de eliminar los comentarios, me queda un %{, significa que hay un comentario que no cierra
-    if @text.match(/%\{/) != nil
-      posInicio = $~.offset(0)[0]
-      text_arr = text.split(/\r?\n/)
-      columnaFinal = text_arr[-1].length+1
-      lineaFinal = text_arr.length
-      @text = @text[0...posInicio]
-      @errores << TokenError.new("EOF",lineaFinal,columnaFinal,"}%")
-    end
 
-
-    # Crear las subclases de token a partir de las reglas
-    REGLAS.each do |nombreToken,regex|
-      Object.const_set(nombreToken,Class.new(Token))
-    end
-    # Crear las subclases de token a partir de las palabras reservadas
-    PALABRAS_RESERVADAS.each do |palabra|
-      Object.const_set("Tk#{palabra.capitalize}",Class.new(Token))
-    end
-    SIMBOLOS.values.each do |nombre|
-      Object.const_set("Tk#{nombre}",Class.new(Token))
-    end
-  end
-
+  # Crea y devuelve un token con los datos suministrados
   def createToken(tk,linea,posicion,valor=nil)
+    # Le sumamos 1 a la posición ya que la columna está indexada desde 1 y la posición pasada es desde 0
     Object.const_get(tk).new(linea,posicion+1,valor)
   end
 
   def tokenizeWord(palabra,pos)
+
     conjuntoTokens = []
     finTk = pos
+
+    # Por cada palabra chequeo en orden de precedencia si hace match con la regexp de algún token
     palabra.each do |laPalabra|
       token = nil
       inicioTk = finTk
@@ -104,13 +134,13 @@ class Lexer
       else
         # Luego chequeo si es un simbolo
         SIMBOLOS.each do |simbolo,nombre|
-            if laPalabra == "not" or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
-            #if (laPalabra.match(/^not\z/) != nil and simbolo == "not") or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
-              token = self.createToken("Tk#{nombre}",@nroLinea,inicioTk)
-              break
-            end
+          if laPalabra == "not" or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
+            token = self.createToken("Tk#{nombre}",@nroLinea,inicioTk)
+            break
           end
-        # Si no he detectado algun token hasta el momento, chequeo coincide con alguna regla (numero o variable)
+        end
+        # Si no he detectado algun token hasta el momento,
+        # chequeo coincide con alguna "regla" (TkId,TkCaracter,TkTrue,TkFalse,TkNum)
         if token == nil
           REGLAS.each do |tk,regex|
             if laPalabra.match(regex) != nil
@@ -121,56 +151,82 @@ class Lexer
           end
         end
       end
-      # Si no detecto nada es un error
+      # Si no detecté nada es un error
       if token == nil
-        @errores << TokenError.new(laPalabra,@nroLinea,inicioTk+1)
+        # Si hay más de un símbolo en la palabra que dio error, agrego los errores uno a uno
+        if laPalabra.length > 1
+          laPalabra.scan(/\W/) do
+            posChar = $~.offset(0)
+            @errores << TokenError.new($~,@nroLinea,inicioTk+posChar[0]+1)
+          end
+        else
+          @errores << TokenError.new(laPalabra,@nroLinea,inicioTk+1)
+        end
       else
         conjuntoTokens << token
       end
 
     end
-    conjuntoTokens.each do |token|
-      @tokens << token
-    end
+    # Agrego todos los tokens detectados en @tokens
+
+    @tokens += conjuntoTokens
   end
 
   def tokenizeLine(line)
-    # Matcheamos todo lo que no sean espacios
-    line.scan(/\S+/) do |palabra|
+    # Matcheamos todas las palabras separadas por espacios y el caso especial ' '
+    line.scan(/'[ ]+'|\S+/) do |palabra|
       inicioTk = $~.offset(0)[0]
-      # Separo todos los símbolos por espacios
-      palabra_s = palabra.gsub(/\W/,' \0 ')
-      # Elimino los espacios de los char
-      chars = palabra_s.scan(/('[ ]+([^']| \\ n| \\ t| \\  ' | \\  \\ )[ ]+')/)
-      # Por cada char elimino los espacios dentro de él
-      chars.each do |ch|
-        posChar = Regexp.last_match.offset(1)
-        ch_sin_espacios = ch[0].gsub(/\s+/,'')
-        palabra_s = palabra_s[0...posChar[0]] + "'#{ch_sin_espacios}'" + palabra_s[posChar[1]...palabra_s.length]
+      # Separo todos los símbolos pegados con espacios
+      palabra_s = palabra.gsub(/[^\w\s']+/,' \0 ')
+      # Agrego espacios a los lados de los char por si hay algo pegado que deba ser analizado
+      palabra_s = palabra_s.gsub(/'([^']| \\ \\ | \\ n| \\ t| \\ ')'/,' \0 ')
+
+      # Si la palabra contiene un char, borro los espacios innecesarios agregados anteriormente
+      if palabra_s.match(/'([^']| \\ \\ | \\ n| \\ t| \\ ')' /)
+        posChar = $~.offset(0)
+        # Si la palabra no es ' ', borro los espacios dentro del comentario, si no lo dejo así porque está bien
+        if $1 != " "
+          palabra_s = palabra_s[0...posChar[0]] + "'" + $1.gsub(/\s+/,'') + "' " + palabra_s[posChar[1]...palabra_s.length]
+        end
       end
-      # Separo los diferentes tokens que hay en la palabra en un arreglo
-      palabra = palabra_s.split
+      # Separo las palabras separadas por espacios y el caso especial ' ' para analizarlos por separado
+      palabra = palabra_s.scan(/' '|\S+/)
+      # Creo una copia del arreglo para no modificarlo
       arrTemp = Array.new(palabra)
+      # Voy llevando la posición en el arreglo de la palabra que estoy preprocesando
       i = 0
-      arrTemp.each do |verificando|
-        if verificando.match(/^[0-9]+([a-zA-Z_]+[0-9]*)+/)
-          verArr = verificando.sub(/^[0-9]+/,' \0 ').split
-          palabra = palabra[0...i] + verArr + palabra[i+1...palabra.length]
-          i += verArr.length-1
+      arrTemp.each do |palabraCandidata|
+        # Si tengo numero e id pegados, los separo para analizarlos por separado
+        if palabraCandidata.match(/^[0-9]+([a-zA-Z_]+[0-9]*)+/)
+          # Separo las palabras y las agrego en el arreglo palabraArr
+          palabraArr = palabraCandidata.sub(/^[0-9]+/,' \0 ').split
+          palabra = palabra[0...i] + palabraArr + palabra[i+1...palabra.length]
+          # Como agregué algunos elementos al arreglo de palabras, me salto tantas posiciones, le resto 1 porque al final
+          # siempre le sumo 1
+          i += palabraArr.length-1
+        # Si no estoy al final de la palabra, es decir, tengo algo a la derecha, chequeo si es un símbolo de dos caracteres
         elsif i+1 < palabra.length
           simbolos_par = ["/\\","\\/","<=",">=","++","::","->","<-"]
           simbolos_par.each do |simbolo|
-            if verificando.match Regexp.escape(simbolo[0])
+            # Por cada símbolo chequeo si la palabra chequeada es el primer caracter del símbolo, y si la siguiente
+            # palabra en el arreglo es el segundo caracter del símbolo
+            if palabraCandidata.match Regexp.escape(simbolo[0])
               if palabra[i+1] == simbolo[1]
+                # Si efectivamente pasa esto, entonces uno el primer caracter con el segundo,
+                # y borro el segundo caracter del arreglo
                 palabra[i] += simbolo[1]
                 palabra.delete_at(i+1)
+                # Le resto uno porque en realidad no debería moverme, pero como siempre le sumo 1 entonces se cancela
                 i -= 1
               end
             end
           end
         end
+        # En cualquier caso avanzo una posición
         i += 1
       end
+      # Mando a tokenizar el arreglo de palabras posiblemente tokenizables que detecté, tomando como posición base
+      # el inicio de la palabra misma
       self.tokenizeWord(palabra,inicioTk)
     end
     @nroLinea += 1
@@ -178,23 +234,49 @@ class Lexer
 
   def tokenize
     @text.lines do |linea|
-      # Borro todos los espacios de mas dentro de un char
-      linea.gsub!(/'[ ]*(.*?)[ ]*'/,'\'\1\'')
       self.tokenizeLine(linea)
     end
   end
 
   def printOutput
-    if @errores.length > 0
-      puts @errores
+    # Si hay errores entonces los imprimo en el formato dado
+    if @errores.empty?
+      if !@tokens.empty?
+
+        linea = nil
+
+        @tokens.each do |tk|
+
+          lineaAnt = linea
+          linea = tk.linea
+
+          # Si cambié de linea desde el último token, imprimo un salto de línea
+          if lineaAnt != linea and lineaAnt != nil
+            print "\n"
+          # Si no cambié de linea y no estoy comenzando a imprimir, entonces imprimo una ,
+          elsif lineaAnt != nil
+            print ", "
+          end
+          # Imprimo la representación del token
+          print "#{tk}"
+        end
+      end
+    # Si hay errores, entonces solo imprimo los errores
     else
-      puts @tokens
+      puts @errores
     end
   end
 
 end
 
+# Obtengo el nombre del archivo pasado como parámetro
 filename = ARGV[0]
+# Si no le pasé nada, entonces lanzo un error
+if !filename
+  raise 'Debe pasarle un archivo al lexer'
+end
+
+# Creo el objeto lexer, lo mando a que tokenice e imprima los errores
 l = Lexer.new(filename)
 l.tokenize
 l.printOutput

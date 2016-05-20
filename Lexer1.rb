@@ -76,6 +76,10 @@ class Lexer
 
       # Leer archivo y eliminar comentarios antes de procesarlo (preservando las lineas y columnas)
       text = File.read(archivo)
+      
+      # Elimino los comentarios de linea
+      @text = text.gsub(/%%.*$/,'')
+
       text.scan (/(%\{.*?\}%)/m) do
         # Obtengo la posición de inicio y fin del comentario
         iniComentario = $~.offset(1)[0]
@@ -85,9 +89,6 @@ class Lexer
         # (para preservar la posición de los tokens) y luego el resto del código después del comentario
         text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
       end
-      # Elimino los comentarios de linea
-      @text = text.gsub(/%%.*$/,'')
-
       # Si luego de eliminar los comentarios, me queda un %{, significa que hay un comentario que no cierra
       if @text.match(/%\{/) != nil
         # Obtengo la posición y linea final del archivo y agrego el error de falta cierre de comentario

@@ -1,7 +1,7 @@
 class Token
 
   # Permito acceder a la linea y columna de un token desde fuera (es como hacerlos public)
-  attr_reader :linea, :columna
+  attr_reader :linea, :columna, :valor
 
   # Un token puede o no tener un valor, los token que tienen valores son TkId, TkCaracter, TkNum
   def initialize(linea,columna,valor=nil)

@@ -1,26 +1,12 @@
-22begin3
-begin3
-begin_3
-begin22
-22not
-nota
-notar
-beginnot
-beginot
 with
     var contador : int
-
-	hola	    
 begin
-    %{ {% Asignar al contador el valor}% asasd }%
-    %{ sadas %{ asdas asdasgasf
-    asd
-    adsd
-    }% contador <- 35.
-    %{ asdas }%
-    a + b
-    a+b
-    a/b
-    a / b
-    a/ b
+    a <- 3 + (4 + 5) .
+    b <- 4.
+    if (a > b) ->
+    	c[3] <- 4.
+    	c[4,5,'p',caliente] <- (4+5+7) .
+    otherwise
+    	print 5 + 6.
+    end
 end

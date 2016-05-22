@@ -1,9 +1,18 @@
 # Para permitir hacer un to_s que reciba un parámetro, hacemos override del to_s normal
 class Object
-	def _to_s (x=nil)
-		to_s
+	def _to_s (nivel=0)
+		str = ""
+		if self.class == Array
+			self.each do |elem|
+				str += ("\t" * (nivel)) + "#{elem._to_s} \n"
+			end
+			str += "]"
+		else
+			to_s
+		end
 	end
 end
+# TODO: Las expresiones unarias son un caso particular, hay que interpretar "prefijo" y "posfijo"
 ARBOLES = {
 	'Expr_Aritm' => ["Operador", "Operando izquierdo", "Operando derecho"],
 	'Expr_Bool' => ["Operador", "Operando izquierdo", "Operando derecho"],
@@ -78,9 +87,9 @@ ARBOLES.each do |tipo_arbol,descripcion|
 				desc_izq = ARBOLES[tipo_arbol][1]
 				desc_der = ARBOLES[tipo_arbol][2]
 				str = tipo_arbol.upcase + " \n"
-				str += ("\t" * (nivel)) + "#{desc_valor}: #{@valor._to_s} \n" unless @valor == nil
-				str += ("\t" * (nivel)) + "#{desc_izq}: #{@izq._to_s(nivel+1)} \n" unless @izq == nil
-				str += ("\t" * (nivel)) + "#{desc_der}: #{@der._to_s(nivel+1)} \n" unless @der == nil
+				str += ("\t" * (nivel)) + "#{desc_valor}: #{@valor._to_s} \n" unless @valor == nil or desc_valor == nil
+				str += ("\t" * (nivel)) + "#{desc_izq}: #{@izq._to_s(nivel+1)} \n" unless @izq == nil or desc_izq == nil
+				str += ("\t" * (nivel)) + "#{desc_der}: #{@der._to_s(nivel+1)} \n" unless @der == nil or desc_der == nil
 				return str
 			end
 		end

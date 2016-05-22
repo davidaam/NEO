@@ -103,7 +103,7 @@ class Parser
 			 | literal {result = val[0]}
 
 		contenedor: 'id' {result = Arbol_Variable.new(val[0])}
-			 	  | 'id' '[' valores ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
+			 	  | contenedor '[' valores ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
 		
 		literal: 'true' {result = Arbol_Literal_Bool.new('True')}
 			   | 'false' {result = Arbol_Literal_Bool.new('False')}
@@ -111,8 +111,8 @@ class Parser
 			   | 'caracter' {result = Arbol_Literal_Bool.new(val[0])}
 			   | matriz {result = val[0]}
 
-		matriz: '{' '}' {result = Arbol_Literal_Matriz.new([])}
-			  | '{' valores '}' {result = Arbol_Literal_Matriz.new(val[1])}
+		matriz: '{' '}' {result = Arbol_Literal_Matr.new([])}
+			  | '{' valores '}' {result = Arbol_Literal_Matr.new(val[1])}
 
 		valores: valores ',' valor {result = val[0] << val[2] }
 			   | valor {result = [val[0]]}

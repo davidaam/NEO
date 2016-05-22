@@ -4,7 +4,7 @@ begin
     a <- 3 + (4 + 5) .
     b <- 4.
     if (a > b) ->
-    	c[3] <- 4.
+    	c[3] <- -4.
     	c[4,5,'p',caliente] <- (4+5+7) .
     otherwise
     	print 5 + 6.

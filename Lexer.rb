@@ -231,9 +231,9 @@ class Lexer
 
         # En caso de que no sea un char pero tenga una comilla, esta no tendra espacios entre los caracteres
         # Por lo tanto hay que separarlos
-        if (palabraCandidata.match(/'([^']| \\ \\ | \\ n| \\ t| \\ ')'/)==nil and palabraCandidata.match(/'/))
+        if (palabraCandidata.match(/'([^']|\\\\|\\n|\\t|\\')'/)==nil and palabraCandidata.match(/'/)!=nil)
           # Separo las palabras y las agrego en el arreglo palabraArr
-          palabraArr = palabraCandidata.sub(/'/,' \0 ').split
+          palabraArr = palabraCandidata.gsub(/'/,' \0 ').split
           palabra = palabra[0...i] + palabraArr + palabra[i+1...palabra.length]
           # Como agregué algunos elementos al arreglo de palabras, me salto tantas posiciones, le resto 1 porque al final
           # siempre le sumo 1

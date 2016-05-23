@@ -1,5 +1,6 @@
 with
     var contador, bar : int
+    var m : matrix [1,4,5] of int
 begin
 	bar[1,2,3,4] <- 3.
 	print 3 + (5 + 6) .

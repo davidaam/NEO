@@ -83,10 +83,12 @@ class Parser
 		bloque: 'with' declaraciones 'begin' instruccion 'end' {result = val[3]}
 			  | 'begin' instruccion 'end' {result = val[1]}
 
+		# Restringimos en la gramática que la especificación de las dimensiones de las matrices
+		# se hace estrictamente con literales numéricos
 		tipo: 'char' 
 			| 'bool' 
 			| 'int'
-			| 'matrix' '[' valores ']' 'of' tipo		
+			| 'matrix' '[' numeros ']' 'of' tipo		
 
 		declaracion: 'var' declarables ':' tipo
 
@@ -102,8 +104,9 @@ class Parser
 		valor: contenedor {result = val[0]}
 			 | literal {result = val[0]}
 
+
 		contenedor: 'id' {result = Arbol_Variable.new(val[0])}
-			 	  | contenedor '[' valores ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
+			 	  | contenedor '[' numeros ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
 		
 		literal: 'true' {result = Arbol_Literal_Bool.new('True')}
 			   | 'false' {result = Arbol_Literal_Bool.new('False')}
@@ -117,6 +120,9 @@ class Parser
 		valores: valores ',' valor {result = val[0] << val[2] }
 			   | valor {result = [val[0]]}
 
+		numeros: numeros ',' 'numero' {result = val[0] << val[2] }
+			   | 'numero' {result = [val[0]]}
+			   
 		instruccion: asignacion {result = val[0]}
 				   | secuenciacion {result = val[0]}
 				   | bloque {result = val[0]}

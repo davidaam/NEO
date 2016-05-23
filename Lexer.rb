@@ -288,4 +288,4 @@ load 'Parser.rb'
 
 p = Parser.new(l.tokens)
 x = p.parse
-puts x.to_s
+puts x

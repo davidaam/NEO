@@ -151,31 +151,31 @@ class Parser
 				 | '(' expresion ')' {result = val[1]}
 				 | valor {result = val[0]}
 
-		expresion_aritm: expresion '+' expresion {result = Arbol_Expr_Aritm.new(val[1],val[0],val[2])}
-					   | expresion '-' expresion {result = Arbol_Expr_Aritm.new(val[1],val[0],val[2])}
-					   | expresion '*' expresion {result = Arbol_Expr_Aritm.new(val[1],val[0],val[2])}
-					   | expresion '/' expresion {result = Arbol_Expr_Aritm.new(val[1],val[0],val[2])}
-					   | expresion '%' expresion {result = Arbol_Expr_Aritm.new(val[1],val[0],val[2])}
-					   | '-' expresion =MENOS_UNARIO {result = Arbol_Expr_UnariaA.new('prefijo',val[0],val[1])}
+		expresion_aritm: expresion '+' expresion {result = Arbol_Expr_Aritm.new('+',val[0],val[2])}
+					   | expresion '-' expresion {result = Arbol_Expr_Aritm.new('-',val[0],val[2])}
+					   | expresion '*' expresion {result = Arbol_Expr_Aritm.new('*',val[0],val[2])}
+					   | expresion '/' expresion {result = Arbol_Expr_Aritm.new('/',val[0],val[2])}
+					   | expresion '%' expresion {result = Arbol_Expr_Aritm.new('%',val[0],val[2])}
+					   | '-' expresion =MENOS_UNARIO {result = Arbol_Expr_UnariaA.new('prefijo','-',val[1])}
 
-		expresion_bool: expresion '/\\' expresion {result = Arbol_Expr_Bool.new(val[1],val[0],val[2])}
-					  | expresion '\\/' expresion {result = Arbol_Expr_Bool.new(val[1],val[0],val[2])}
-					  | 'not' expresion {result = Arbol_Expr_UnariaB.new('prefijo',val[0],val[1])}
+		expresion_bool: expresion '/\\' expresion {result = Arbol_Expr_Bool.new('/\\',val[0],val[2])}
+					  | expresion '\\/' expresion {result = Arbol_Expr_Bool.new('\\/',val[0],val[2])}
+					  | 'not' expresion {result = Arbol_Expr_UnariaB.new('prefijo','not',val[1])}
 
-		expresion_char: expresion '++' {result = Arbol_Expr_Char.new('posfijo',val[1],val[0])}
-					  | expresion '--' {result = Arbol_Expr_Char.new('posfijo',val[1],val[0])}
-					  | '#' expresion {result = Arbol_Expr_Char.new('prefijo',val[0],val[1])}
+		expresion_char: expresion '++' {result = Arbol_Expr_Char.new('posfijo','++',val[0])}
+					  | expresion '--' {result = Arbol_Expr_Char.new('posfijo','--',val[0])}
+					  | '#' expresion {result = Arbol_Expr_Char.new('prefijo','#',val[1])}
 
-		expresion_matr: expresion '::' expresion {result = Arbol_Expr_Matri.new(val[1],val[0],val[2])}
-					  | '$' expresion {result = Arbol_Expr_UnariaM.new('prefijo',val[0],val[1])}
-					  | expresion '?' {result = Arbol_Expr_UnariaM.new('posfijo',val[1],val[0])}
+		expresion_matr: expresion '::' expresion {result = Arbol_Expr_Matr.new('::',val[0],val[2])}
+					  | '$' expresion {result = Arbol_Expr_UnariaM.new('prefijo','$',val[1])}
+					  | expresion '?' {result = Arbol_Expr_UnariaM.new('posfijo','?',val[0])}
 
-		expresion_rel: expresion '=' expresion 	{result = Arbol_Expr_Rel.new(val[1],val[0],val[2])}
-					 | expresion '/=' expresion {result = Arbol_Expr_Rel.new(val[1],val[0],val[2])}
-					 | expresion '<' expresion 	{result = Arbol_Expr_Rel.new(val[1],val[0],val[2])}
-					 | expresion '>' expresion 	{result = Arbol_Expr_Rel.new(val[1],val[0],val[2])}
-					 | expresion '<=' expresion {result = Arbol_Expr_Rel.new(val[1],val[0],val[2])}
-					 | expresion '>=' expresion {result = Arbol_Expr_Rel.new(val[1],val[0],val[2])}
+		expresion_rel: expresion '=' expresion 	{result = Arbol_Expr_Rel.new('=',val[0],val[2])}
+					 | expresion '/=' expresion {result = Arbol_Expr_Rel.new('/=',val[0],val[2])}
+					 | expresion '<' expresion 	{result = Arbol_Expr_Rel.new('<',val[0],val[2])}
+					 | expresion '>' expresion 	{result = Arbol_Expr_Rel.new('>',val[0],val[2])}
+					 | expresion '<=' expresion {result = Arbol_Expr_Rel.new('<=',val[0],val[2])}
+					 | expresion '>=' expresion {result = Arbol_Expr_Rel.new('>=',val[0],val[2])}
 
 ---- inner
 	load 'arbol.rb'

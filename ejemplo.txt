@@ -1,12 +1,5 @@
 with
-    var contador : int
+    var contador, bar : int
 begin
-    a <- 3 + (4 + 5) .
-    b <- {{3,5,1,2},{2,3,1}} .
-    if (a > b) ->
-    	c[3] <- -4.
-    	c[4,5,'p',caliente] <- (4+5+7) .
-    otherwise
-    	print 5 + 6.
-    end
+	bar[1,2,3,4] <- 3.
 end

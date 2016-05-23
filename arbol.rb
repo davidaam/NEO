@@ -1,12 +1,17 @@
-# Para permitir hacer un to_s que reciba un parámetro, hacemos override del to_s normal
+# Defino un wrapper de to_s que:
+# - Cuando es llamado por árboles, manda a llamar el método to_s con el nivel correspondiente
+# - Cuando es llamado por un arreglo, imprimo "[" _to_s de cada elemento "]", con el nivel correspondiente
+# - En el resto de los casos, simplemente hace la llamada a to_s
 class Object
 	def _to_s (nivel=0)
-		str = ""
+		str = "[\n"
 		if self.class == Array
 			self.each do |elem|
-				str += ("\t" * (nivel)) + "#{elem._to_s} \n"
+				str += ("\t" * (nivel)) + "#{elem._to_s(nivel+1)} \n"
 			end
-			str += "]"
+			str += ("\t" * (nivel-1)) + "]"
+		elsif self.class.superclass == ArbolBinario || self.class.superclass == ArbolGeneral
+			to_s(nivel)
 		else
 			to_s
 		end
@@ -53,7 +58,6 @@ class Arbol_Secuenciacion < ArbolGeneral
 end
 
 class ArbolBinario
-	
 	@desc_valor = ""
 	@desc_izq = ""
 	@desc_der = ""
@@ -81,13 +85,13 @@ ARBOLES.each do |tipo_arbol,descripcion|
 
 	Object.const_set("Arbol_#{tipo_arbol}",
 		Class.new(ArbolBinario) do
-			def _to_s (nivel = 2)
+			def to_s (nivel = 1)
 				tipo_arbol = self.class.to_s.sub("Arbol_","")
 				desc_valor = ARBOLES[tipo_arbol][0]
 				desc_izq = ARBOLES[tipo_arbol][1]
 				desc_der = ARBOLES[tipo_arbol][2]
-				str = tipo_arbol.upcase + " \n"
-				str += ("\t" * (nivel)) + "#{desc_valor}: #{@valor._to_s} \n" unless @valor == nil or desc_valor == nil
+				str = "#{tipo_arbol.upcase}\n"
+				str += ("\t" * (nivel)) + "#{desc_valor}: #{@valor._to_s(nivel+1)} \n" unless @valor == nil or desc_valor == nil
 				str += ("\t" * (nivel)) + "#{desc_izq}: #{@izq._to_s(nivel+1)} \n" unless @izq == nil or desc_izq == nil
 				str += ("\t" * (nivel)) + "#{desc_der}: #{@der._to_s(nivel+1)} \n" unless @der == nil or desc_der == nil
 				return str

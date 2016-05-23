@@ -120,8 +120,8 @@ class Parser
 		valores: valores ',' valor {result = val[0] << val[2] }
 			   | valor {result = [val[0]]}
 
-		numeros: numeros ',' 'numero' {result = val[0] << val[2] }
-			   | 'numero' {result = [val[0]]}
+		numeros: numeros ',' 'numero' {result = val[0] << Arbol_Literal_Num.new(val[2]) }
+			   | 'numero' {result = [Arbol_Literal_Num.new(val[0])]}
 			   
 		instruccion: asignacion {result = val[0]}
 				   | secuenciacion {result = val[0]}

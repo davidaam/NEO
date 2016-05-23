@@ -1,20 +1,20 @@
-# Defino un wrapper de to_s que:
-# - Cuando es llamado por árboles, manda a llamar el método to_s con el nivel correspondiente
-# - Cuando es llamado por un arreglo, imprimo "[" _to_s de cada elemento "]", con el nivel correspondiente
-# - En el resto de los casos, simplemente hace la llamada a to_s
+# Defino _to_s para todos los objetos, _to_s es básicamente un to_s que toma un parámetro,
+# si la clase en cuestión no implementa _to_s, entonces simplemente se invoca to_s
 class Object
-	def _to_s (nivel=0)
+	def _to_s (nivel=1)
+		self.to_s
+	end
+end
+
+# Se define _to_s para arreglos como un _to_s recursivo, de forma que se imprima la representación
+# como string de cada elemento.
+class Array
+	def _to_s (nivel=1)
 		str = "[\n"
-		if self.class == Array
-			self.each do |elem|
-				str += ("\t" * (nivel)) + "#{elem._to_s(nivel+1)} \n"
-			end
-			str += ("\t" * (nivel-1)) + "]"
-		elsif self.class.superclass == ArbolBinario || self.class.superclass == ArbolGeneral || self.class == Arbol_Rep_Det
-			to_s(nivel)
-		else
-			to_s
+		self.each do |elem|
+			str += ("\t" * (nivel)) + "#{elem._to_s(nivel+1)} \n"
 		end
+		str += ("\t" * (nivel-1)) + "]"
 	end
 end
 
@@ -46,10 +46,18 @@ class ArbolGeneral
 		@valor = valor
 		@hijos = hijos
 	end
+
+	# Defino to_s como un alias de _to_s
+	def to_s(nivel=1)
+		self._to_s(nivel)
+	end
+
+	# Los árboles generales deben implementar _to_s
+	def _to_s(nivel=1) end
 end
 
 class Arbol_Secuenciacion < ArbolGeneral
-	def to_s (nivel = 1)
+	def _to_s (nivel = 1)
 		str = "SECUENCIACION \n"
 		@hijos.each do |hijo|
 			str += ("\t" * nivel) + hijo._to_s(nivel+1)
@@ -69,6 +77,14 @@ class ArbolBinario
 		@der = der
 	end
 
+	# Defino to_s como un alias de _to_s
+	def to_s(nivel=1)
+		self._to_s(nivel)
+	end
+
+	# Los árboles binarios deben implementar _to_s
+	def _to_s(nivel=1) end
+
 end
 
 class Arbol_Rep_Det
@@ -79,7 +95,13 @@ class Arbol_Rep_Det
 		@instruccion = instruccion
 		@id = id
 	end
-	def to_s (nivel = 1)
+	
+	# Defino to_s como un alias de _to_s
+	def to_s(nivel=1)
+		self._to_s(nivel)
+	end
+
+	def _to_s (nivel = 1)
 		tabs = ("\t" * nivel)
 		str = "REPETICION_DET\n"
 		str += tabs + "Identificador: #{@id._to_s(nivel+1)}\n"
@@ -95,7 +117,7 @@ ARBOLES.each do |tipo_arbol,descripcion|
 
 	Object.const_set("Arbol_#{tipo_arbol}",
 		Class.new(ArbolBinario) do
-			def to_s (nivel = 1)
+			def _to_s (nivel = 1)
 				tipo_arbol = self.class.to_s.sub("Arbol_","")
 				desc_valor = ARBOLES[tipo_arbol][0]
 				desc_izq = ARBOLES[tipo_arbol][1]

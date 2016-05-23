@@ -10,13 +10,14 @@ class Object
 				str += ("\t" * (nivel)) + "#{elem._to_s(nivel+1)} \n"
 			end
 			str += ("\t" * (nivel-1)) + "]"
-		elsif self.class.superclass == ArbolBinario || self.class.superclass == ArbolGeneral
+		elsif self.class.superclass == ArbolBinario || self.class.superclass == ArbolGeneral || self.class == Arbol_Rep_Det
 			to_s(nivel)
 		else
 			to_s
 		end
 	end
 end
+
 # TODO: Las expresiones unarias son un caso particular, hay que interpretar "prefijo" y "posfijo"
 ARBOLES = {
 	'Expr_Aritm' => ["Operador", "Operando izquierdo", "Operando derecho"],
@@ -48,10 +49,10 @@ class ArbolGeneral
 end
 
 class Arbol_Secuenciacion < ArbolGeneral
-	def to_s (nivel = 0)
-		str = ("\t" * nivel) + "SECUENCIACION \n"
+	def to_s (nivel = 1)
+		str = "SECUENCIACION \n"
 		@hijos.each do |hijo|
-			str += ("\t" * (nivel+1)) + hijo._to_s(nivel+2)
+			str += ("\t" * nivel) + hijo._to_s(nivel+1)
 		end
 		return str
 	end
@@ -71,14 +72,23 @@ class ArbolBinario
 end
 
 class Arbol_Rep_Det
-	def initialize (id, from, to, instruccion, step = nil)
+	def initialize (id, from, to, instruccion, step = 1)
 		@from = from
 		@to = to
 		@step = step
 		@instruccion = instruccion
 		@id = id
 	end
-	# TODO: to_s
+	def to_s (nivel = 1)
+		tabs = ("\t" * nivel)
+		str = "REPETICION_DET\n"
+		str += tabs + "Identificador: #{@id._to_s(nivel+1)}\n"
+		str += tabs + "Valor inicial: #{@from._to_s(nivel+1)}\n"
+		str += tabs + "Valor final: #{@to._to_s(nivel+1)}\n"
+		str += tabs + "Paso: #{@step._to_s(nivel+1)}\n"
+		str += tabs + "Instrucción: #{@instruccion._to_s(nivel+1)}\n"
+		str
+	end
 end
 
 ARBOLES.each do |tipo_arbol,descripcion| 
@@ -91,9 +101,10 @@ ARBOLES.each do |tipo_arbol,descripcion|
 				desc_izq = ARBOLES[tipo_arbol][1]
 				desc_der = ARBOLES[tipo_arbol][2]
 				str = "#{tipo_arbol.upcase}\n"
-				str += ("\t" * (nivel)) + "#{desc_valor}: #{@valor._to_s(nivel+1)} \n" unless @valor == nil or desc_valor == nil
-				str += ("\t" * (nivel)) + "#{desc_izq}: #{@izq._to_s(nivel+1)} \n" unless @izq == nil or desc_izq == nil
-				str += ("\t" * (nivel)) + "#{desc_der}: #{@der._to_s(nivel+1)} \n" unless @der == nil or desc_der == nil
+				tabs = ("\t" * nivel)
+				str += tabs + "#{desc_valor}: #{@valor._to_s(nivel+1)} \n" unless @valor == nil or desc_valor == nil
+				str += tabs + "#{desc_izq}: #{@izq._to_s(nivel+1)} \n" unless @izq == nil or desc_izq == nil
+				str += tabs + "#{desc_der}: #{@der._to_s(nivel+1)} \n" unless @der == nil or desc_der == nil
 				return str
 			end
 		end

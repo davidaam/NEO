@@ -2,4 +2,9 @@ with
     var contador, bar : int
 begin
 	bar[1,2,3,4] <- 3.
+	print 3 + (5 + 6) .
+	for a from 0 to 10 + 6 step 1 ->
+		a <- 4.
+		read perro.
+	end
 end

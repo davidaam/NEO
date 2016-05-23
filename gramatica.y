@@ -138,8 +138,8 @@ class Parser
 		condicional: 'if' expresion '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3])}
 				   | 'if' expresion '->' instruccion 'otherwise' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3],val[5])}
 
-		repeticion_det: 'for' 'id' 'from' expresion_aritm 'to' expresion_aritm '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7],nil)}
-					  | 'for' 'id' 'from' expresion_aritm 'to' expresion_aritm 'step' expresion_aritm '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])}
+		repeticion_det: 'for' 'id' 'from' expresion 'to' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7],nil)}
+					  | 'for' 'id' 'from' expresion 'to' expresion 'step' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])}
 
 		repeticion_indet: 'while' expresion '->' instruccion 'end' {result = Arbol_Rep_Indet.new(nil, val[1], val[3])}
 

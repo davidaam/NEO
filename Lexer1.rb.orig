@@ -1,12 +1,11 @@
 #!/usr/bin/ruby
-# encoding: utf-8
 
 require 'set'
 
 load 'Token.rb'
 
 class Lexer
-  attr_accessor :tokens
+  # attr_reader :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
       'TkCaracter' => /'([^'\\]|\\n|\\t|\\'|\\\\)'$/,
@@ -63,12 +62,35 @@ class Lexer
       "]" => "CorcheteCierra",
       "{" => "LlaveAbre",
       "}" => "LlaveCierra",
+<<<<<<< HEAD
+      "->" => "Hacer",
+      "<-" => "Asignacion",
+=======
+>>>>>>> bcd515d19e5d3c925595abf18ffb8b282537572b
       "+" => "Suma",
       "-" => "Resta",
       "*" => "Mult",
       "/" => "Div",
       "%" => "Mod",
+<<<<<<< HEAD
+      "/\\" => "Conjuncion",
+      "\\/" => "Disyuncion",
       "not" => "Negacion",
+      "<" => "Menor",
+      "<=" => "MenorIgual",
+      ">" => "Mayor",
+      ">=" => "MayorIgual",
+      "=" => "Igual",
+      "/=" => "Desigual",
+      "++" => "SiguienteCar",
+      "--" => "AnteriorCar",
+      "#" => "ValorAscii",
+      "::" => "Concatenacion",
+      "$" => "Rotacion",
+      "?" => "Trasposicion"
+=======
+      "not" => "Negacion",
+>>>>>>> bcd515d19e5d3c925595abf18ffb8b282537572b
   }
 
     def initialize(archivo)
@@ -78,10 +100,6 @@ class Lexer
 
       # Leer archivo y eliminar comentarios antes de procesarlo (preservando las lineas y columnas)
       text = File.read(archivo)
-      
-      # Elimino los comentarios de linea
-      @text = text.gsub(/%%.*$/,'')
-
       text.scan (/(%\{.*?\}%)/m) do
         # Obtengo la posición de inicio y fin del comentario
         iniComentario = $~.offset(1)[0]
@@ -91,6 +109,9 @@ class Lexer
         # (para preservar la posición de los tokens) y luego el resto del código después del comentario
         text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
       end
+      # Elimino los comentarios de linea
+      @text = text.gsub(/%%.*$/,'')
+
       # Si luego de eliminar los comentarios, me queda un %{, significa que hay un comentario que no cierra
       if @text.match(/%\{/) != nil
         # Obtengo la posición y linea final del archivo y agrego el error de falta cierre de comentario
@@ -155,7 +176,7 @@ class Lexer
           end
         end
       end
-      # Si no detecté nada es un error
+      # Si no detecto nada es un error
       if token == nil
         # Si hay más de un símbolo en la palabra que dio error, agrego los errores uno a uno
         if laPalabra.length > 1
@@ -181,7 +202,7 @@ class Lexer
     line.scan(/'[ ]+'|\S+/) do |palabra|
       inicioTk = $~.offset(0)[0]
       # Separo todos los símbolos pegados con espacios
-      palabra_s = palabra.gsub(/[^\w\s']/,' \0 ')
+      palabra_s = palabra.gsub(/[^\w\s']+/,' \0 ')
       # Agrego espacios a los lados de los char por si hay algo pegado que deba ser analizado
       palabra_s = palabra_s.gsub(/'([^']| \\ \\ | \\ n| \\ t| \\ ')'/,' \0 ')
 
@@ -210,9 +231,13 @@ class Lexer
           i += palabraArr.length-1
         # Si no estoy al final de la palabra, es decir, tengo algo a la derecha, chequeo si es un símbolo de dos caracteres
         elsif i+1 < palabra.length
+<<<<<<< HEAD
+          simbolos_par = ["/\\","\\/","<=",">=","++","::","->","<-","/="]
+=======
           # Obtengo los simbolos de tamaño 2
           simbolos_par = SIMBOLOS.keys.select { |s| s.length == 2 }
 
+>>>>>>> bcd515d19e5d3c925595abf18ffb8b282537572b
           simbolos_par.each do |simbolo|
             # Por cada símbolo chequeo si la palabra chequeada es el primer caracter del símbolo, y si la siguiente
             # palabra en el arreglo es el segundo caracter del símbolo
@@ -228,18 +253,6 @@ class Lexer
             end
           end
         end
-
-        # En caso de que no sea un char pero tenga una comilla, esta no tendra espacios entre los caracteres
-        # Por lo tanto hay que separarlos
-        if (palabraCandidata.match(/'([^']| \\ \\ | \\ n| \\ t| \\ ')'/)==nil and palabraCandidata.match(/'/))
-          # Separo las palabras y las agrego en el arreglo palabraArr
-          palabraArr = palabraCandidata.sub(/'/,' \0 ').split
-          palabra = palabra[0...i] + palabraArr + palabra[i+1...palabra.length]
-          # Como agregué algunos elementos al arreglo de palabras, me salto tantas posiciones, le resto 1 porque al final
-          # siempre le sumo 1
-          i += palabraArr.length-1
-        end
-
         # En cualquier caso avanzo una posición
         i += 1
       end
@@ -297,11 +310,4 @@ end
 # Creo el objeto lexer, lo mando a que tokenice e imprima los errores
 l = Lexer.new(filename)
 l.tokenize
-puts l.tokens
 l.printOutput
-
-#load 'Parser.rb'
-
-#p = Parser.new(l.tokens)
-#x = p.parse
-#puts x

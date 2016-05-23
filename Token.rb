@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 class Token
 
   # Permito acceder a la linea y columna de un token desde fuera (es como hacerlos public)

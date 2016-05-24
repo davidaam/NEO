@@ -10,6 +10,9 @@ end
 # como string de cada elemento.
 class Array
 	def _to_s (nivel=1)
+		if self.length == 0
+			return "[]"
+		end
 		str = "[\n"
 		self.each do |elem|
 			str += ("\t" * (nivel)) + "#{elem._to_s(nivel+1)} \n"

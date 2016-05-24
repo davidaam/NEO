@@ -114,7 +114,6 @@ class Arbol_Rep_Det
 end
 
 ARBOLES.each do |tipo_arbol,descripcion| 
-
 	Object.const_set("Arbol_#{tipo_arbol}",
 		Class.new(ArbolBinario) do
 			def _to_s (nivel = 1)

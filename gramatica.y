@@ -88,7 +88,7 @@ class Parser
 		tipo: 'char' 
 			| 'bool' 
 			| 'int'
-			| 'matrix' '[' numeros ']' 'of' tipo		
+			| 'matrix' '[' expresiones ']' 'of' tipo		
 
 		declaracion: 'var' declarables ':' tipo
 
@@ -104,9 +104,8 @@ class Parser
 		valor: contenedor {result = val[0]}
 			 | literal {result = val[0]}
 
-
 		contenedor: 'id' {result = Arbol_Variable.new(val[0])}
-			 	  | contenedor '[' numeros ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
+			 	  | contenedor '[' expresiones ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
 		
 		literal: 'true' {result = Arbol_Literal_Bool.new('True')}
 			   | 'false' {result = Arbol_Literal_Bool.new('False')}
@@ -115,16 +114,15 @@ class Parser
 			   | matriz {result = val[0]}
 
 		matriz: '{' '}' {result = Arbol_Literal_Matr.new([])}
-			  | '{' valores '}' {result = Arbol_Literal_Matr.new(val[1])}
+			  | '{' expresiones '}' {result = Arbol_Literal_Matr.new(val[1])}
 
-		valores: valores ',' valor {result = val[0] << val[2] }
-			   | valor {result = [val[0]]}
-
-		numeros: numeros ',' 'numero' {result = val[0] << Arbol_Literal_Num.new(val[2]) }
-			   | 'numero' {result = [Arbol_Literal_Num.new(val[0])]}
+		expresiones: expresiones ',' expresion {result = val[0] << val[2] }
+			   | expresion {result = [val[0]]}
 			   
-		instruccion: asignacion {result = val[0]}
+		instruccion: instruccion_unica {result = val[0]}
 				   | secuenciacion {result = val[0]}
+
+		instruccion_unica: asignacion {result = val[0]}
 				   | bloque {result = val[0]}
 				   | entrada_salida {result = val[0]}
 				   | repeticion_det {result = val[0]}
@@ -136,10 +134,10 @@ class Parser
 		entrada_salida: 'read' contenedor '.' {result = Arbol_Read.new(val[1])}
 					  | 'print' expresion '.' {result = Arbol_Print.new(val[1])}
 
-		instrucciones: instrucciones instruccion {result = val[0] << val[1]}
-					 | instruccion {result = [val[0]]}
+		instrucciones: instrucciones instruccion_unica {result = val[0] << val[1]}
+					 | instruccion_unica {result = [val[0]]}
 
-		secuenciacion: instrucciones instruccion {result = Arbol_Secuenciacion.new(nil,val[0] << val[1])}
+		secuenciacion: instrucciones instruccion_unica {result = Arbol_Secuenciacion.new(nil,val[0] << val[1])}
 
 		condicional: 'if' expresion '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3])}
 				   | 'if' expresion '->' instruccion 'otherwise' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3],val[5])}
@@ -175,6 +173,8 @@ class Parser
 		expresion_matr: expresion '::' expresion {result = Arbol_Expr_Matr.new('::',val[0],val[2])}
 					  | '$' expresion {result = Arbol_Expr_UnariaM.new('prefijo','$',val[1])}
 					  | expresion '?' {result = Arbol_Expr_UnariaM.new('posfijo','?',val[0])}
+      		  		  | expresion '[' expresiones ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
+
 
 		expresion_rel: expresion '=' expresion 	{result = Arbol_Expr_Rel.new('=',val[0],val[2])}
 					 | expresion '/=' expresion {result = Arbol_Expr_Rel.new('/=',val[0],val[2])}

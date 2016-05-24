@@ -300,8 +300,8 @@ l.tokenize
 puts l.tokens
 l.printOutput
 
-#load 'Parser.rb'
+load 'Parser.rb'
 
-#p = Parser.new(l.tokens)
-#x = p.parse
-#puts x
+p = Parser.new(l.tokens)
+x = p.parse
+puts x

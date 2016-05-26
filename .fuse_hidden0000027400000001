@@ -1,5 +1,4 @@
 #!/usr/bin/ruby
-# encoding: utf-8
 
 require 'set'
 
@@ -181,7 +180,7 @@ class Lexer
     line.scan(/'[ ]+'|\S+/) do |palabra|
       inicioTk = $~.offset(0)[0]
       # Separo todos los símbolos pegados con espacios
-      palabra_s = palabra.gsub(/[^\w\s']/,' \0 ')
+      palabra_s = palabra.gsub(/[^\w\s']+/,' \0 ')
       # Agrego espacios a los lados de los char por si hay algo pegado que deba ser analizado
       palabra_s = palabra_s.gsub(/'([^']| \\ \\ | \\ n| \\ t| \\ ')'/,' \0 ')
 
@@ -228,18 +227,6 @@ class Lexer
             end
           end
         end
-
-        # En caso de que no sea un char pero tenga una comilla, esta no tendra espacios entre los caracteres
-        # Por lo tanto hay que separarlos
-        if (palabraCandidata.match(/'([^']|\\\\|\\n|\\t|\\')'/)==nil and palabraCandidata.match(/'/)!=nil)
-          # Separo las palabras y las agrego en el arreglo palabraArr
-          palabraArr = palabraCandidata.gsub(/'/,' \0 ').split
-          palabra = palabra[0...i] + palabraArr + palabra[i+1...palabra.length]
-          # Como agregué algunos elementos al arreglo de palabras, me salto tantas posiciones, le resto 1 porque al final
-          # siempre le sumo 1
-          i += palabraArr.length-1
-        end
-
         # En cualquier caso avanzo una posición
         i += 1
       end
@@ -297,9 +284,6 @@ end
 # Creo el objeto lexer, lo mando a que tokenice e imprima los errores
 l = Lexer.new(filename)
 l.tokenize
-puts l.tokens
-l.printOutput
-
 load 'Parser.rb'
 
 p = Parser.new(l.tokens)

@@ -7,6 +7,7 @@ class Parser
 		  'for' 'read' 'step' 'from' 'to' 'of' 'while'
 
 	prechigh
+		left '['
 		nonassoc MENOS_UNARIO
 		left '*' '/' '%'
 		left '+' '-'
@@ -160,19 +161,19 @@ class Parser
 					   | expresion '*' expresion {result = Arbol_Expr_Aritm.new('*',val[0],val[2])}
 					   | expresion '/' expresion {result = Arbol_Expr_Aritm.new('/',val[0],val[2])}
 					   | expresion '%' expresion {result = Arbol_Expr_Aritm.new('%',val[0],val[2])}
-					   | '-' expresion =MENOS_UNARIO {result = Arbol_Expr_UnariaA.new('prefijo','-',val[1])}
+					   | '-' expresion =MENOS_UNARIO {result = Arbol_Expr_Unaria_Aritm.new('-',val[1])}
 
 		expresion_bool: expresion '/\\' expresion {result = Arbol_Expr_Bool.new('/\\',val[0],val[2])}
 					  | expresion '\\/' expresion {result = Arbol_Expr_Bool.new('\\/',val[0],val[2])}
-					  | 'not' expresion {result = Arbol_Expr_UnariaB.new('prefijo','not',val[1])}
+					  | 'not' expresion {result = Arbol_Expr_Unaria_Bool.new('not',val[1])}
 
-		expresion_char: expresion '++' {result = Arbol_Expr_Char.new('posfijo','++',val[0])}
-					  | expresion '--' {result = Arbol_Expr_Char.new('posfijo','--',val[0])}
-					  | '#' expresion {result = Arbol_Expr_Char.new('prefijo','#',val[1])}
+		expresion_char: expresion '++' {result = Arbol_Expr_Char.new('++',val[0])}
+					  | expresion '--' {result = Arbol_Expr_Char.new('--',val[0])}
+					  | '#' expresion {result = Arbol_Expr_Char.new('#',val[1])}
 
 		expresion_matr: expresion '::' expresion {result = Arbol_Expr_Matr.new('::',val[0],val[2])}
-					  | '$' expresion {result = Arbol_Expr_UnariaM.new('prefijo','$',val[1])}
-					  | expresion '?' {result = Arbol_Expr_UnariaM.new('posfijo','?',val[0])}
+					  | '$' expresion {result = Arbol_Expr_Unaria_Matr.new('$',val[1])}
+					  | expresion '?' {result = Arbol_Expr_Unaria_Matr.new('?',val[0])}
       		  		  | expresion '[' expresiones ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
 
 

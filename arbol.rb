@@ -44,31 +44,7 @@ ARBOLES = {
 	'Print' => ["Expresión",nil,nil],
 }
 
-class ArbolGeneral
-	def initialize (valor = nil, hijos = [])
-		@valor = valor
-		@hijos = hijos
-	end
-
-	# Defino to_s como un alias de _to_s
-	def to_s(nivel=1)
-		self._to_s(nivel)
-	end
-
-	# Los árboles generales deben implementar _to_s
-	def _to_s(nivel=1) end
-end
-
-class Arbol_Secuenciacion < ArbolGeneral
-	def _to_s (nivel = 1)
-		str = "SECUENCIACION \n"
-		@hijos.each do |hijo|
-			str += ("\t" * nivel) + hijo._to_s(nivel+1)
-		end
-		return str
-	end
-end
-
+# Definimos la clase arbol binario para modelar árboles de derivación que a lo más tengan dos hijos
 class ArbolBinario
 	@desc_valor = ""
 	@desc_izq = ""
@@ -87,9 +63,57 @@ class ArbolBinario
 
 	# Los árboles binarios deben implementar _to_s
 	def _to_s(nivel=1) end
-
 end
 
+# Definimos la clase que define a los árboles de expresión unaria
+class ArbolExprUnaria
+	def initialize (operador, operando)
+		@operador = operador
+		@operando = operando
+	end
+
+	def to_s (nivel=1)
+		self._to_s(nivel)
+	end
+	
+	def _to_s(nivel=1)
+		tabs = ("\t" * nivel)
+		str = self.class.to_s.sub('Arbol_','').upcase + "\n"
+		str += tabs + "Operador: #{@operador} \n"
+		str += tabs + "Operando: #{@operando._to_s(nivel+1)} \n"
+		str += tabs + "#{desc_der}: #{@der._to_s(nivel+1)} \n"
+		return str
+	end
+end
+
+# Definimos los arboles de expresión unaria de los diferentes tipos que heredan de ArbolExprUnaria
+class Arbol_Expr_Unaria_Bool < ArbolExprUnaria end
+class Arbol_Expr_Unaria_Matr < ArbolExprUnaria end
+class Arbol_Expr_Unaria_Aritm < ArbolExprUnaria end
+class Arbol_Expr_Char < ArbolExprUnaria end
+
+# Defino el arbol de una secuenciación como un árbol general
+class Arbol_Secuenciacion
+	def initialize (valor = nil, hijos = [])
+		@valor = valor
+		@hijos = hijos
+	end
+
+	# Defino to_s como un alias de _to_s
+	def to_s(nivel=1)
+		self._to_s(nivel)
+	end
+
+	def _to_s (nivel = 1)
+		str = "SECUENCIACION \n"
+		@hijos.each do |hijo|
+			str += ("\t" * nivel) + hijo._to_s(nivel+1)
+		end
+		return str
+	end
+end
+
+# Definimos la clase para modelar el árbol de una repetición determinada
 class Arbol_Rep_Det
 	def initialize (id, from, to, instruccion, step = 1)
 		@from = from
@@ -116,6 +140,8 @@ class Arbol_Rep_Det
 	end
 end
 
+# Creamos las clases de los árboles que se comportan como árboles binarios y se crea el
+# método _to_s correspondiente
 ARBOLES.each do |tipo_arbol,descripcion| 
 	Object.const_set("Arbol_#{tipo_arbol}",
 		Class.new(ArbolBinario) do

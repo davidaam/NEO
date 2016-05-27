@@ -1015,7 +1015,7 @@ module_eval(<<'.,.,', 'gramatica.y', 162)
 
 module_eval(<<'.,.,', 'gramatica.y', 163)
   def _reduce_58(val, _values, result)
-    result = Arbol_Expr_Unaria_Aritm.new('-',val[1])
+    result = Arbol_Expr_Unaria_Aritm.new(nil,'-',val[1])
     result
   end
 .,.,
@@ -1036,28 +1036,28 @@ module_eval(<<'.,.,', 'gramatica.y', 166)
 
 module_eval(<<'.,.,', 'gramatica.y', 167)
   def _reduce_61(val, _values, result)
-    result = Arbol_Expr_Unaria_Bool.new('not',val[1])
+    result = Arbol_Expr_Unaria_Bool.new(nil,'not',val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'gramatica.y', 169)
   def _reduce_62(val, _values, result)
-    result = Arbol_Expr_Char.new('++',val[0])
+    result = Arbol_Expr_Char.new(nil,'++',val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'gramatica.y', 170)
   def _reduce_63(val, _values, result)
-    result = Arbol_Expr_Char.new('--',val[0])
+    result = Arbol_Expr_Char.new(nil,'--',val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'gramatica.y', 171)
   def _reduce_64(val, _values, result)
-    result = Arbol_Expr_Char.new('#',val[1])
+    result = Arbol_Expr_Char.new(nil,'#',val[1])
     result
   end
 .,.,
@@ -1071,14 +1071,14 @@ module_eval(<<'.,.,', 'gramatica.y', 173)
 
 module_eval(<<'.,.,', 'gramatica.y', 174)
   def _reduce_66(val, _values, result)
-    result = Arbol_Expr_Unaria_Matr.new('$',val[1])
+    result = Arbol_Expr_Unaria_Matr.new(nil,'$',val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'gramatica.y', 175)
   def _reduce_67(val, _values, result)
-    result = Arbol_Expr_Unaria_Matr.new('?',val[0])
+    result = Arbol_Expr_Unaria_Matr.new(nil,'?',val[0])
     result
   end
 .,.,

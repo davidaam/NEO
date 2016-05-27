@@ -27,6 +27,10 @@ ARBOLES = {
 	'Expr_Bool' => ["Operador", "Operando izquierdo", "Operando derecho"],
 	'Expr_Rel' => ["Operador", "Operando izquierdo", "Operando derecho"],
 	'Expr_Matr' => ["Operador", "Operando izquierdo", "Operando derecho"],
+	'Expr_Unaria_Bool' => [nil,"Operador", "Operando"],
+	'Expr_Unaria_Aritm' => [nil,"Operador", "Operando"],
+	'Expr_Unaria_Matr' => [nil,"Operador", "Operando"],
+	'Expr_Char' => [nil,"Operador", "Operando"],
 	'Indexacion' => [nil,"Matriz", "Índice"],
 	'Asignacion' => [nil,"Contenedor", "Expresión"],
 	'Condicional' => ["Guardia","Éxito","Fracaso"],
@@ -60,36 +64,6 @@ class ArbolBinario
 
 	# Los árboles binarios deben implementar _to_s
 	def _to_s(nivel=1) end
-end
-
-# Definimos la clase que define a los árboles de expresión unaria
-class ArbolExprUnaria
-	def initialize (operador, operando)
-		@operador = operador
-		@operando = operando
-	end
-
-	def to_s (nivel=1)
-		self._to_s(nivel)
-	end
-	
-	def _to_s(nivel=1)
-		tabs = ("\t" * nivel)
-		str = self.class.to_s.sub('Arbol_','').upcase + "\n"
-		str += tabs + "Operador: #{@operador} \n"
-		str += tabs + "Operando: #{@operando._to_s(nivel+1)} \n"
-		return str
-	end
-end
-
-# Definimos los arboles de expresión unaria de los diferentes tipos que heredan de ArbolExprUnaria
-class Arbol_Expr_Unaria_Bool < ArbolExprUnaria
-end
-class Arbol_Expr_Unaria_Matr < ArbolExprUnaria
-end
-class Arbol_Expr_Unaria_Aritm < ArbolExprUnaria
-end
-class Arbol_Expr_Char < ArbolExprUnaria
 end
 
 # Defino el arbol de una secuenciación como un árbol general

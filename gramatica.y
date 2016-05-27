@@ -111,7 +111,7 @@ class Parser
 		literal: 'true' {result = Arbol_Literal_Bool.new('True')}
 			   | 'false' {result = Arbol_Literal_Bool.new('False')}
 			   | 'numero' {result = Arbol_Literal_Num.new(val[0])}
-			   | 'caracter' {result = Arbol_Literal_Bool.new(val[0])}
+			   | 'caracter' {result = Arbol_Literal_Char.new(val[0])}
 			   | matriz {result = val[0]}
 
 		matriz: '{' '}' {result = Arbol_Literal_Matr.new([])}
@@ -138,7 +138,7 @@ class Parser
 		instrucciones: instrucciones instruccion_unica {result = val[0] << val[1]}
 					 | instruccion_unica {result = [val[0]]}
 
-		secuenciacion: instrucciones instruccion_unica {result = Arbol_Secuenciacion.new(nil,val[0] << val[1])}
+		secuenciacion: instrucciones instruccion_unica {result = Arbol_Secuenciacion.new(val[0] << val[1],nil)}
 
 		condicional: 'if' expresion '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3])}
 				   | 'if' expresion '->' instruccion 'otherwise' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3],val[5])}
@@ -184,8 +184,27 @@ class Parser
 					 | expresion '<=' expresion {result = Arbol_Expr_Rel.new('<=',val[0],val[2])}
 					 | expresion '>=' expresion {result = Arbol_Expr_Rel.new('>=',val[0],val[2])}
 
----- inner
-	load 'arbol.rb'
+---- header ----
+
+require_relative 'arbol'
+
+class ErrorSintactico < RuntimeError
+	attr_reader :token
+
+	def initialize(token)
+		@token = token
+	end
+
+	def to_s
+		"Error sintactico con el token \"#{@token.class.to_s}\" en la fila #{@token.linea}, columna: #{@token.columna}."
+	end
+end
+
+---- inner ----
+
+	def on_error(id, token, stack)
+		raise ErrorSintactico::new(token)
+	end
 
 	def initialize (tokens)
 		@tokens = tokens
@@ -198,7 +217,7 @@ class Parser
 	def next_token
     	token = @tokens.shift
 	    if token != nil
-	      tk_parser = [token.class, token.valor]
+	      tk_parser = [token.class, token]
 	    else
 	      tk_parser = [false,false]
 	    end

@@ -297,8 +297,6 @@ end
 # Creo el objeto lexer, lo mando a que tokenice e imprima los errores
 l = Lexer.new(filename)
 l.tokenize
-puts l.tokens
-l.printOutput
 
 load 'Parser.rb'
 

@@ -5,10 +5,29 @@
 #
 
 require 'racc/parser.rb'
+
+
+require_relative 'arbol'
+
+class ErrorSintactico < RuntimeError
+	attr_reader :token
+
+	def initialize(token)
+		@token = token
+	end
+
+	def to_s
+		"Error sintactico con el token \"#{@token.class.to_s}\" en la fila #{@token.linea}, columna: #{@token.columna}."
+	end
+end
+
 class Parser < Racc::Parser
 
-module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 188)
-	load 'arbol.rb'
+module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 204)
+
+	def on_error(id, token, stack)
+		raise ErrorSintactico::new(token)
+	end
 
 	def initialize (tokens)
 		@tokens = tokens
@@ -21,7 +40,7 @@ module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 188)
 	def next_token
     	token = @tokens.shift
 	    if token != nil
-	      tk_parser = [token.class, token.valor]
+	      tk_parser = [token.class, token]
 	    else
 	      tk_parser = [false,false]
 	    end
@@ -737,7 +756,7 @@ module_eval(<<'.,.,', 'gramatica.y', 112)
 
 module_eval(<<'.,.,', 'gramatica.y', 113)
   def _reduce_21(val, _values, result)
-    result = Arbol_Literal_Bool.new(val[0])
+    result = Arbol_Literal_Char.new(val[0])
     result
   end
 .,.,
@@ -870,7 +889,7 @@ module_eval(<<'.,.,', 'gramatica.y', 138)
 
 module_eval(<<'.,.,', 'gramatica.y', 140)
   def _reduce_40(val, _values, result)
-    result = Arbol_Secuenciacion.new(nil,val[0] << val[1])
+    result = Arbol_Secuenciacion.new(val[0] << val[1],nil)
     result
   end
 .,.,
@@ -996,7 +1015,7 @@ module_eval(<<'.,.,', 'gramatica.y', 162)
 
 module_eval(<<'.,.,', 'gramatica.y', 163)
   def _reduce_58(val, _values, result)
-    result = Arbol_Expr_UnariaA.new('prefijo','-',val[1])
+    result = Arbol_Expr_Unaria_Aritm.new('-',val[1])
     result
   end
 .,.,
@@ -1017,28 +1036,28 @@ module_eval(<<'.,.,', 'gramatica.y', 166)
 
 module_eval(<<'.,.,', 'gramatica.y', 167)
   def _reduce_61(val, _values, result)
-    result = Arbol_Expr_UnariaB.new('prefijo','not',val[1])
+    result = Arbol_Expr_Unaria_Bool.new('not',val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'gramatica.y', 169)
   def _reduce_62(val, _values, result)
-    result = Arbol_Expr_Char.new('posfijo','++',val[0])
+    result = Arbol_Expr_Char.new('++',val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'gramatica.y', 170)
   def _reduce_63(val, _values, result)
-    result = Arbol_Expr_Char.new('posfijo','--',val[0])
+    result = Arbol_Expr_Char.new('--',val[0])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'gramatica.y', 171)
   def _reduce_64(val, _values, result)
-    result = Arbol_Expr_Char.new('prefijo','#',val[1])
+    result = Arbol_Expr_Char.new('#',val[1])
     result
   end
 .,.,
@@ -1052,14 +1071,14 @@ module_eval(<<'.,.,', 'gramatica.y', 173)
 
 module_eval(<<'.,.,', 'gramatica.y', 174)
   def _reduce_66(val, _values, result)
-    result = Arbol_Expr_UnariaM.new('prefijo','$',val[1])
+    result = Arbol_Expr_Unaria_Matr.new('$',val[1])
     result
   end
 .,.,
 
 module_eval(<<'.,.,', 'gramatica.y', 175)
   def _reduce_67(val, _values, result)
-    result = Arbol_Expr_UnariaM.new('posfijo','?',val[0])
+    result = Arbol_Expr_Unaria_Matr.new('?',val[0])
     result
   end
 .,.,

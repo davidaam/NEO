@@ -80,7 +80,7 @@ class Lexer
       text = File.read(archivo)
       
       # Elimino los comentarios de linea
-      @text = text.gsub(/%%.*$/,'')
+      text.gsub!(/%%.*$/,'')
 
       text.scan (/(%\{.*?\}%)/m) do
         # Obtengo la posición de inicio y fin del comentario
@@ -92,16 +92,16 @@ class Lexer
         text = text[0...iniComentario] << $1.gsub(/[^\n]/, ' ') << text[finComentario...text.length]
       end
       # Si luego de eliminar los comentarios, me queda un %{, significa que hay un comentario que no cierra
-      if @text.match(/%\{/) != nil
+      if text.match(/%\{/) != nil
         # Obtengo la posición y linea final del archivo y agrego el error de falta cierre de comentario
         posInicio = $~.offset(0)[0]
         text_arr = text.split(/\r?\n/)
         columnaFinal = text_arr[-1].length+1
         lineaFinal = text_arr.length
-        @text = @text[0...posInicio]
+        text = text[0...posInicio]
         @errores << TokenError.new("EOF",lineaFinal,columnaFinal,"}%")
       end
-
+      @text = text
       # Crear las subclases de token a partir de las reglas
       REGLAS.each do |nombreToken,regex|
         Object.const_set(nombreToken,Class.new(Token))

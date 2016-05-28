@@ -139,7 +139,7 @@ class Lexer
       else
         # Luego chequeo si es un simbolo
         SIMBOLOS.each do |simbolo,nombre|
-          if laPalabra == "not" or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
+          if (laPalabra == "not" and simbolo == "not") or (laPalabra.match(Regexp.escape(simbolo)) != nil and simbolo != "not")
             token = self.createToken("Tk#{nombre}",@nroLinea,inicioTk)
             break
           end

@@ -1,3 +1,2 @@
-echo "./Lexer.rb \$1" > LexNeo
-chmod +x LexNeo
-chmod +x Lexer.rb
+echo "ruby Lexer.rb \$1" > LexNeo
+echo "ruby Parser.rb \$1" > SintNeo

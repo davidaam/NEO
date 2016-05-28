@@ -186,7 +186,10 @@ class Parser
 
 ---- header
 
-require_relative 'arbol'
+#!/usr/bin/ruby
+# encoding: utf-8
+
+require_relative 'AST'
 require_relative 'Lexer'
 
 

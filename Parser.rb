@@ -7,7 +7,10 @@
 require 'racc/parser.rb'
 
 
-require_relative 'arbol'
+#!/usr/bin/ruby
+# encoding: utf-8
+
+require_relative 'AST'
 require_relative 'Lexer'
 
 
@@ -41,7 +44,7 @@ end
 
 class Parser < Racc::Parser
 
-module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 222)
+module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 225)
 
 	def on_error(id, token, stack)
 		raise ErrorSintactico::new(token)

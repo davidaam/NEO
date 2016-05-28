@@ -141,7 +141,7 @@ class Parser
 		secuenciacion: instrucciones instruccion_unica {result = Arbol_Secuenciacion.new(val[0] << val[1],nil)}
 
 		condicional: 'if' expresion '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3])}
-				   | 'if' expresion '->' instruccion 'otherwise' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3],val[5])}
+				   | 'if' expresion '->' instruccion 'otherwise' '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3],val[5])}
 
 		repeticion_det: 'for' 'id' 'from' expresion 'to' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7],nil)}
 					  | 'for' 'id' 'from' expresion 'to' expresion 'step' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])}

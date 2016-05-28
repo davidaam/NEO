@@ -2,11 +2,10 @@
 # encoding: utf-8
 
 require 'set'
-
-load 'Token.rb'
+require_relative 'Token'
 
 class Lexer
-  attr_accessor :tokens
+  attr_accessor :tokens, :errores
   # Defino las expresiones regulares que reconocen cada tipo de Token
   REGLAS = {
       'TkCaracter' => /'([^'\\]|\\n|\\t|\\'|\\\\)'$/,
@@ -104,15 +103,17 @@ class Lexer
       @text = text
       # Crear las subclases de token a partir de las reglas
       REGLAS.each do |nombreToken,regex|
-        Object.const_set(nombreToken,Class.new(Token))
+        Object.const_set(nombreToken,Class.new(Token)) unless Object.const_defined?(nombreToken)
       end
       # Crear las subclases de token a partir de las palabras reservadas
       PALABRAS_RESERVADAS.each do |palabra|
-        Object.const_set("Tk#{palabra.capitalize}",Class.new(Token))
+        nombreToken = "Tk#{palabra.capitalize}"
+        Object.const_set(nombreToken,Class.new(Token)) unless Object.const_defined?(nombreToken)
       end
       # Crear las subclases de token a partir de los símbolos
       SIMBOLOS.values.each do |nombre|
-        Object.const_set("Tk#{nombre}",Class.new(Token))
+        nombreToken = "Tk#{nombre}"
+        Object.const_set(nombreToken,Class.new(Token)) unless Object.const_defined?(nombreToken)
       end
     end
 
@@ -251,7 +252,7 @@ class Lexer
   end
 
   def tokenize
-    @text.lines do |linea|
+    @text.split(/\r?\n/).each do |linea|
       self.tokenizeLine(linea)
     end
   end
@@ -286,20 +287,3 @@ class Lexer
   end
 
 end
-
-# Obtengo el nombre del archivo pasado como parámetro
-filename = ARGV[0]
-# Si no le pasé nada, entonces lanzo un error
-if !filename
-  raise 'Debe pasarle un archivo al lexer'
-end
-
-# Creo el objeto lexer, lo mando a que tokenice e imprima los errores
-l = Lexer.new(filename)
-l.tokenize
-
-load 'Parser.rb'
-
-p = Parser.new(l.tokens)
-x = p.parse
-puts x

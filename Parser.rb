@@ -8,6 +8,24 @@ require 'racc/parser.rb'
 
 
 require_relative 'arbol'
+require_relative 'Lexer'
+
+
+# Obtengo el nombre del archivo pasado como parámetro
+filename = ARGV[0]
+# Si no le pasé nada, entonces lanzo un error
+if !filename
+  raise 'Debe pasarle un archivo al lexer'
+end
+
+# Creo el objeto lexer, lo mando a que tokenice e imprima los errores
+l = Lexer.new(filename)
+l.tokenize
+
+if not l.errores.empty?
+	l.printOutput
+	raise 'El programa tiene errores léxicos, no se procederá a hacer el análisis sintáctico'
+end
 
 class ErrorSintactico < RuntimeError
 	attr_reader :token
@@ -23,7 +41,7 @@ end
 
 class Parser < Racc::Parser
 
-module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 204)
+module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 222)
 
 	def on_error(id, token, stack)
 		raise ErrorSintactico::new(token)
@@ -46,6 +64,7 @@ module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 204)
 	    end
     	return tk_parser
 	end
+
 ...end gramatica.y/module_eval...
 ##### State transition tables begin ###
 
@@ -1137,3 +1156,11 @@ def _reduce_none(val, _values, result)
 end
 
 end   # class Parser
+
+
+# Si no hay errores léxicos, se procede a hacer el análisis sintáctico
+if l.errores.empty?
+	p = Parser.new(l.tokens)
+	x = p.parse
+	puts x
+end

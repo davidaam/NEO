@@ -134,3 +134,56 @@ ARBOLES.each do |tipo_arbol,descripcion|
 		end
 	)
 end
+
+# Creamos el metodo eval para cada clase
+
+class Arbol_Expr_Aritm
+	def eval (tipo, tabla_sim)
+		op_izq = @izq.eval(tipo, tabla_sim)
+		op_der = @der.eval(tipo, tabla_sim)
+		case @valor
+			when '+'
+				valor = op_izq + op_der
+			when '-'
+				valor = op_izq - op_der
+			when '/'
+				valor = op_izq / op_der
+			when '*'
+				valor = op_izq * op_der
+			when '%'
+				valor = op_izq % op_der
+		end
+		return valor
+	end
+end
+
+class Arbol_Literal_Num
+	def eval (tipo, tabla_sim)
+		if tipo == 'int'
+			return @valor
+		end
+		throw new ErrorTipo(tipo,'int')
+	end
+end
+
+ARBOLES = {
+	'Expr_Aritm' => { },
+	'Expr_Bool' => ["Operador", "Operando izquierdo", "Operando derecho"],
+	'Expr_Rel' => ["Operador", "Operando izquierdo", "Operando derecho"],
+	'Expr_Matr' => ["Operador", "Operando izquierdo", "Operando derecho"],
+	'Expr_Unaria_Bool' => [nil,"Operador", "Operando"],
+	'Expr_Unaria_Aritm' => [nil,"Operador", "Operando"],
+	'Expr_Unaria_Matr' => [nil,"Operador", "Operando"],
+	'Expr_Char' => [nil,"Operador", "Operando"],
+	'Indexacion' => [nil,"Matriz", "Índice"],
+	'Asignacion' => [nil,"Contenedor", "Expresión"],
+	'Condicional' => ["Guardia","Éxito","Fracaso"],
+	'Rep_Indet' => [nil,"Guardia","Instrucción"],
+	'Variable' => ["Identificador",nil,nil],
+	'Literal_Bool' => ["Valor",nil,nil],
+	'Literal_Char' => ["Valor",nil,nil],
+	'Literal_Num' => ["Valor",nil,nil],
+	'Literal_Matr' => ["Valor",nil,nil],
+	'Read' => ["Identificador",nil,nil],
+	'Print' => ["Expresión",nil,nil],
+}

@@ -81,26 +81,26 @@ class Parser
 	end
 	start bloque
 	rule
-		bloque: 'with' declaraciones 'begin' instruccion 'end' {result = val[3]}
-			  | 'begin' instruccion 'end' {result = val[1]}
+		bloque: 'with' declaraciones 'begin' instruccion 'end' {result = ArbolBloque.new(val[3],val[1].set_tabla_padre(val[3]))}
+			  | 'begin' instruccion 'end' {result = ArbolBloque.new(val[1],nil)}
 
 		# Restringimos en la gramática que la especificación de las dimensiones de las matrices
 		# se hace estrictamente con literales numéricos
-		tipo: 'char' 
-			| 'bool' 
-			| 'int'
-			| 'matrix' '[' expresiones ']' 'of' tipo		
+		tipo: 'char' {result = Tipo.new('char') }
+			| 'bool' {result = Tipo.new('bool') }
+			| 'int' {result = Tipo.new('int') }
+			| 'matrix' '[' expresiones ']' 'of' tipo { result = Tipo.new('matrix',val[2],val[5]) }	
 
-		declaracion: 'var' declarables ':' tipo
+		declaracion: 'var' declarables ':' tipo { result = val[0].map {|s| s.set_type(val[3])} }
 
-		declaraciones: declaraciones declaracion
-					 | declaracion
+		declaraciones: declaraciones declaracion {result = TablaSimbolos.new(val[0] << val[1]) }
+					 | declaracion {result = val[0] }
 
-		declarable: 'id' '<-' expresion
-				  | 'id'
+		declarable: 'id' '<-' expresion {result = [Simbolo.new(val[0],nil,val[2])] }
+				  | 'id' {result = [Simbolo.new(val[0])] }
 
-		declarables: declarables ',' declarable
-				   | declarable
+		declarables: declarables ',' declarable { result = val[0] << val[2] }
+				   | declarable { result = val[0] }
 
 		valor: contenedor {result = val[0]}
 			 | literal {result = val[0]}
@@ -118,7 +118,7 @@ class Parser
 			  | '{' expresiones '}' {result = Arbol_Literal_Matr.new(val[1])}
 
 		expresiones: expresiones ',' expresion {result = val[0] << val[2] }
-			   | expresion {result = [val[0]]}
+			   | expresion {result = val[0]}
 			   
 		instruccion: instruccion_unica {result = val[0]}
 				   | secuenciacion {result = val[0]}
@@ -136,7 +136,7 @@ class Parser
 					  | 'print' expresion '.' {result = Arbol_Print.new(val[1])}
 
 		instrucciones: instrucciones instruccion_unica {result = val[0] << val[1]}
-					 | instruccion_unica {result = [val[0]]}
+					 | instruccion_unica {result = val[0]}
 
 		secuenciacion: instrucciones instruccion_unica {result = Arbol_Secuenciacion.new(val[0] << val[1],nil)}
 

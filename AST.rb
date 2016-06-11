@@ -44,6 +44,17 @@ ARBOLES = {
 	'Print' => ["Expresión",nil,nil],
 }
 
+# Definimos una clase que representa un bloque de incorporación de alcance
+class ArbolBloque
+	def initialize (instr, tabla)
+		@instr = instr
+		@tabla = tabla
+	end
+	def set_tabla_padre (padre)
+		tabla.padre = padre
+	end
+end
+
 # Definimos la clase arbol binario para modelar árboles de derivación que a lo más tengan dos hijos
 class ArbolBinario
 	@desc_valor = ""
@@ -64,6 +75,10 @@ class ArbolBinario
 
 	# Los árboles binarios deben implementar _to_s
 	def _to_s(nivel=1) end
+		
+	def ==(x)
+		@valor == x.valor and @izq == x.izq and @der == x.der
+	end
 end
 
 # Defino el arbol de una secuenciación como un árbol general
@@ -84,6 +99,14 @@ class Arbol_Secuenciacion
 			str += ("\t" * nivel) + hijo._to_s(nivel+1)
 		end
 		return str
+	end
+	
+	def set_tabla_padre(padre)
+		@hijos.each do |arbol|
+			if arbol.class == ArbolBloque
+				arbol.set_tabla_padre(padre)
+			end
+		end
 	end
 end
 
@@ -157,6 +180,106 @@ class Arbol_Expr_Aritm
 	end
 end
 
+class Arbol_Expr_Bool
+	def eval (tipo, tabla_sim)
+		op_izq = @izq.eval(tipo, tabla_sim)
+		op_der = @der.eval(tipo, tabla_sim)
+		case @valor
+			when '/\\'
+				valor = op_izq and op_der
+			when '\\/'
+				valor = op_izq or op_der
+		end
+		return valor
+	end
+end
+
+class Arbol_Expr_Rel
+	def eval (tipo, tabla_sim)
+		op_izq = @izq.eval(tipo, tabla_sim)
+		op_der = @der.eval(tipo, tabla_sim)
+		case @valor
+			when '<'
+				valor = op_izq < op_der
+			when '<='
+				valor = op_izq <= op_der
+			when '>'
+				valor = op_izq > op_der
+			when '>='
+				valor = op_izq >= op_der
+			when '='
+				valor = op_izq == op_der
+		end
+		return valor
+	end
+end
+
+class Arbol_Expr_Unaria_Aritm
+	def eval (tipo, tabla_sim)
+		operando = @der.eval(tipo, tabla_sim)
+		# El único operador unario es -
+		return (-1) * operando
+	end
+end
+
+class Arbol_Expr_Unaria_Bool
+	def eval (tipo, tabla_sim)
+		operando = @der.eval(tipo, tabla_sim)
+		# El único operador unario es not
+		return not operando
+	end
+end
+
+class Arbol_Expr_Char
+	def eval (tipo, tabla_sim)
+		operador = @valor
+		case operador
+			when '++'
+				operando = @der.eval(tipo, tabla_sim)
+				operando_ascii = operando.codepoints.first
+				valor = (operando_ascii + 1).chr
+			when '--'
+				operando = @der.eval(tipo, tabla_sim)
+				operando_ascii = operando.codepoints.first
+				valor = (operando_ascii - 1).chr
+			when '#'
+				operando = @der.eval('char',tabla_sim)
+				valor = operando.codepoints.first
+		end
+		return valor		
+	end
+end
+
+class Arbol_Variable
+	def eval (tipo, tabla_sim)
+		if (e = tabla_sim.get(@valor))
+			if (e.tipo == tipo)
+				return e.valor
+			end
+			throw new ErrorTipo(tipo, e.tipo)
+		end
+		throw new VariableNoDeclarada(@valor) 
+	end
+end
+
+class Arbol_Literal_Bool
+	def eval (tipo, tabla_sim)
+		if tipo == 'bool'
+			return @valor
+		end
+		throw new ErrorTipo(tipo,'bool')
+	end
+end
+
+class Arbol_Literal_Char
+	def eval (tipo, tabla_sim)
+		if tipo == 'char'
+			return @valor
+		end
+		throw new ErrorTipo(tipo,'char')
+	end
+end
+
 class Arbol_Literal_Num
 	def eval (tipo, tabla_sim)
 		if tipo == 'int'
@@ -166,24 +289,12 @@ class Arbol_Literal_Num
 	end
 end
 
-ARBOLES = {
-	'Expr_Aritm' => { },
-	'Expr_Bool' => ["Operador", "Operando izquierdo", "Operando derecho"],
-	'Expr_Rel' => ["Operador", "Operando izquierdo", "Operando derecho"],
-	'Expr_Matr' => ["Operador", "Operando izquierdo", "Operando derecho"],
-	'Expr_Unaria_Bool' => [nil,"Operador", "Operando"],
-	'Expr_Unaria_Aritm' => [nil,"Operador", "Operando"],
-	'Expr_Unaria_Matr' => [nil,"Operador", "Operando"],
-	'Expr_Char' => [nil,"Operador", "Operando"],
-	'Indexacion' => [nil,"Matriz", "Índice"],
-	'Asignacion' => [nil,"Contenedor", "Expresión"],
-	'Condicional' => ["Guardia","Éxito","Fracaso"],
-	'Rep_Indet' => [nil,"Guardia","Instrucción"],
-	'Variable' => ["Identificador",nil,nil],
-	'Literal_Bool' => ["Valor",nil,nil],
-	'Literal_Char' => ["Valor",nil,nil],
-	'Literal_Num' => ["Valor",nil,nil],
-	'Literal_Matr' => ["Valor",nil,nil],
-	'Read' => ["Identificador",nil,nil],
-	'Print' => ["Expresión",nil,nil],
-}
+# Que es lo que se hara con matriz ##################################################################
+class Arbol_Literal_Matr
+	def eval (tipo, tabla_sim)
+		if tipo == 'int'
+			return @valor
+		end
+		throw new ErrorTipo(tipo,'int')
+	end
+end

@@ -51,16 +51,22 @@ class ArbolBloque
 		@tabla = tabla
 	end
 	def set_tabla_padre (padre)
-		tabla.padre = padre
+		@tabla.padre = padre
+		padre.hijos << @tabla
+	end
+	def to_s
+		str = @tabla.to_s + "\n"
+		# str += "AST" + @instr.to_s
+		str
 	end
 end
 
 # Definimos la clase arbol binario para modelar árboles de derivación que a lo más tengan dos hijos
 class ArbolBinario
+	attr_reader :valor, :izq, :der
 	@desc_valor = ""
 	@desc_izq = ""
 	@desc_der = ""
-
 	def initialize (token = nil, izq = nil, der = nil)
 		# Si es un token, entonces guardo como valor el valor, si no, guardo directamente lo pasado.
 		@valor = token.class.superclass == Token ? token.valor : token
@@ -75,10 +81,9 @@ class ArbolBinario
 
 	# Los árboles binarios deben implementar _to_s
 	def _to_s(nivel=1) end
+
+	def set_tabla_padre(padre) end
 		
-	def ==(x)
-		@valor == x.valor and @izq == x.izq and @der == x.der
-	end
 end
 
 # Defino el arbol de una secuenciación como un árbol general
@@ -226,7 +231,7 @@ class Arbol_Expr_Unaria_Bool
 	def eval (tipo, tabla_sim)
 		operando = @der.eval(tipo, tabla_sim)
 		# El único operador unario es not
-		return not operando
+		return !operando
 	end
 end
 
@@ -282,8 +287,8 @@ end
 
 class Arbol_Literal_Num
 	def eval (tipo, tabla_sim)
-		if tipo == 'int'
-			return @valor
+		if tipo.tipo == 'int'
+			return Integer(@valor)
 		end
 		throw new ErrorTipo(tipo,'int')
 	end

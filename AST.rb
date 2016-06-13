@@ -86,6 +86,9 @@ class ArbolBloque
 		#str += "AST\n" + @instr.to_s
 		str
 	end
+	def eval
+		@instr.eval(nil,@tabla)
+	end
 end
 
 # Definimos la clase arbol binario para modelar árboles de derivación que a lo más tengan dos hijos
@@ -138,6 +141,12 @@ class Arbol_Secuenciacion
 			if arbol.class == ArbolBloque
 				arbol.set_tabla_padre(padre)
 			end
+		end
+	end
+
+	def eval(tipo, tabla)
+		@hijos.each do |instr|
+			instr.eval(nil,tabla)
 		end
 	end
 end
@@ -341,7 +350,7 @@ end
 class Arbol_Variable
 	def eval (tipo, tabla_sim)
 		if (e = tabla_sim.get(@valor))
-			if (e.tipo == tipo or !tipo)
+			if (!tipo or e.tipo == tipo)
 				return {"tipo" => e.tipo, "valor" => e.valor}
 			end
 			throw ErrorTipo.new(tipo, e.tipo)
@@ -388,7 +397,6 @@ end
 
 class Arbol_Read
 	def eval (tipo, tabla_sim)
-		puts @valor.class
 		@valor.eval(nil, tabla_sim)
 	end
 end

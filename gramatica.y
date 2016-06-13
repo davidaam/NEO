@@ -263,5 +263,6 @@ end
 if l.errores.empty?
 	p = Parser.new(l.tokens)
 	x = p.parse
+	x.eval
 	puts x
 end

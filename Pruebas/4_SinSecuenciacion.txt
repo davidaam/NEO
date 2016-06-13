@@ -1,0 +1,7 @@
+with
+	var x <- 4,w <- 5, a<-3, b: int
+	var y <- {{1,2},{3,4}}: matrix [2,2] of int
+	var z: char
+begin
+	x <- -3.
+end

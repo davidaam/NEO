@@ -70,6 +70,8 @@ class Simbolo
 	end
 	def eval(tabla)
 		@tipo.eval(tabla)
+		puts "ID: #{@id} TIPO #{@tipo.class}"
+		puts @valor
 		@valor = @valor.eval(@tipo,tabla)['valor'] if @valor != nil
 	end
 	def to_s(nivel = 0)

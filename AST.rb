@@ -194,11 +194,11 @@ end
 
 class Arbol_Expr_Aritm
 	def eval (tipo, tabla_sim)
-		if tipo != INT
+		if tipo != INT or tipo != nil
 			throw ErrorTipo.new(INT,tipo)
 		end
-		op_izq = @izq.eval(tipo, tabla_sim)['valor']
-		op_der = @der.eval(tipo, tabla_sim)['valor']
+		op_izq = @izq.eval(INT, tabla_sim)['valor']
+		op_der = @der.eval(INT, tabla_sim)['valor']
 		case @valor
 			when '+'
 				valor = op_izq + op_der
@@ -217,11 +217,11 @@ end
 
 class Arbol_Expr_Bool
 	def eval (tipo, tabla_sim)
-		if tipo != BOOL
+		if tipo != BOOL or tipo != nil
 			throw ErrorTipo.new(BOOL,tipo)
 		end
-		op_izq = @izq.eval(tipo, tabla_sim)['valor']
-		op_der = @der.eval(tipo, tabla_sim)['valor']
+		op_izq = @izq.eval(BOOL, tabla_sim)['valor']
+		op_der = @der.eval(BOOL, tabla_sim)['valor']
 		case @valor
 			when '/\\'
 				valor = op_izq and op_der
@@ -234,8 +234,11 @@ end
 
 class Arbol_Expr_Rel
 	def eval (tipo, tabla_sim)
+		if tipo != BOOL or tipo != nil
+			throw ErrorTipo.new(BOOL,tipo)
+		end		
 		op_izq = @izq.eval(tipo, tabla_sim)
-		op_der = @der.eval(tipo, tabla_sim)
+		op_der = @der.eval(op_izq.tipo, tabla_sim)
 		if op_izq.tipo == op_der.tipo
 			throw ErrorTipo.new(op_izq.tipo,op_der.tipo)
 		else
@@ -260,7 +263,10 @@ end
 
 class Arbol_Expr_Unaria_Aritm
 	def eval (tipo, tabla_sim)
-		operando = @der.eval(tipo, tabla_sim)['valor']
+		if tipo != INT or tipo != nil
+			throw ErrorTipo.new(INT,tipo)
+		end
+		operando = @der.eval(INT, tabla_sim)['valor']
 		# El único operador unario es -
 		return {"tipo" => INT, "valor" => (-1) * operando}
 	end
@@ -268,7 +274,10 @@ end
 
 class Arbol_Expr_Unaria_Bool
 	def eval (tipo, tabla_sim)
-		operando = @der.eval(tipo, tabla_sim)['valor']
+		if tipo != BOOL or tipo != nil
+			throw ErrorTipo.new(BOOL,tipo)
+		end
+		operando = @der.eval(BOOL, tabla_sim)['valor']
 		# El único operador unario es not
 		return {"tipo" => BOOL, "valor" => !operando}
 	end
@@ -276,20 +285,30 @@ end
 
 class Arbol_Expr_Char
 	def eval (tipo, tabla_sim)
-		operador = @valor
+		operador = @izq
+		tipo_retornado = CHAR
 		case operador
 			when '++'
-				operando = @der.eval(tipo, tabla_sim)['valor']
-				operando_ascii = operando.codepoints.first
-				return {"tipo" => CHAR, "valor" => (operando_ascii + 1).chr}
+				if tipo == CHAR or !tipo
+					operando = @der.eval(CHAR, tabla_sim)['valor']
+					operando_ascii = operando.codepoints.first
+					return {"tipo" => CHAR, "valor" => (operando_ascii + 1).chr}
+				end
 			when '--'
-				operando = @der.eval(tipo, tabla_sim)['valor']
-				operando_ascii = operando.codepoints.first
-				return {"tipo" => CHAR, "valor" => (operando_ascii - 1).chr}
+				if tipo == CHAR or !tipo
+					operando = @der.eval(CHAR, tabla_sim)['valor']
+					operando_ascii = operando.codepoints.first
+					return {"tipo" => CHAR, "valor" => (operando_ascii - 1).chr}
+				end
 			when '#'
-				operando = @der.eval(CHAR,tabla_sim)['valor']
-				return {"tipo" => INT, "valor" => operando.codepoints.first}
+				tipo_retornado = INT
+				if tipo == INT or !tipo
+					puts "HEYYY : #{tipo}"
+					operando = @der.eval(CHAR, tabla_sim)['valor']
+					return {"tipo" => INT, "valor" => operando.codepoints.first}
+				end
 		end
+		throw ErrorTipo.new(tipo,tipo_retornado)
 	end
 end
 
@@ -297,8 +316,10 @@ end
 class Arbol_Expr_Matr
 	def eval (tipo, tabla_sim)
 		# el unico operador es ::
-		op_izq = @izq.eval(tipo, tabla_sim)
-		op_der = @der.eval(tipo, tabla_sim)
+		if !tipo or tipo.tipo == "matrix"
+			op_izq = @izq.eval(tipo, tabla_sim)
+			op_der = @der.eval(tipo, tabla_sim)
+		end
 		# para concatenar Matrix.build(4,2){|row,col| row<2?  m[row,col] : a[row-2,col]}
 
 
@@ -320,7 +341,7 @@ end
 class Arbol_Variable
 	def eval (tipo, tabla_sim)
 		if (e = tabla_sim.get(@valor))
-			if (e.tipo == tipo)
+			if (e.tipo == tipo or !tipo)
 				return {"tipo" => e.tipo, "valor" => e.valor}
 			end
 			throw ErrorTipo.new(tipo, e.tipo)
@@ -331,7 +352,7 @@ end
 
 class Arbol_Literal_Bool
 	def eval (tipo, tabla_sim)
-		if tipo == BOOL
+		if tipo == BOOL or !tipo
 			return {"tipo" => BOOL, "valor" => @valor}
 		end
 		throw ErrorTipo.new(tipo,BOOL)
@@ -340,7 +361,7 @@ end
 
 class Arbol_Literal_Char
 	def eval (tipo, tabla_sim)
-		if tipo == CHAR
+		if tipo == CHAR or !tipo
 			return {"tipo" => CHAR, "valor" => @valor}
 		end
 		throw ErrorTipo.new(tipo,CHAR)
@@ -349,7 +370,7 @@ end
 
 class Arbol_Literal_Num
 	def eval (tipo, tabla_sim)
-		if tipo == INT
+		if tipo == INT or !tipo
 			return {"tipo" => INT, "valor" => Integer(@valor)}
 		end
 		throw ErrorTipo.new(tipo,INT)
@@ -362,5 +383,12 @@ class Arbol_Literal_Matr
 			return @valor
 		end
 		throw ErrorTipo.new(tipo,'int')
+	end
+end
+
+class Arbol_Read
+	def eval (tipo, tabla_sim)
+		e = @valor.eval(nil, tabla_sim)
+		return {"tipo" => e.tipo, "valor" => e.valor}
 	end
 end

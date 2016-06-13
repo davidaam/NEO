@@ -1,0 +1,18 @@
+with
+	var n <- 5 : int
+begin 
+	if false / cangrejo -> 
+			f <- not perro. 
+		otherwise -> print  2%j.
+	end
+
+	for string from false to 
+		'p' -> print 'g'.
+	end 
+
+	read k.
+
+	begin
+		print Bool :: 4 .
+	end 
+end

@@ -90,9 +90,9 @@ class Parser
 
 		# Restringimos en la gramática que la especificación de las dimensiones de las matrices
 		# se hace estrictamente con literales numéricos
-		tipo: 'char' {result = Tipo.new('char') }
-			| 'bool' {result = Tipo.new('bool') }
-			| 'int' {result = Tipo.new('int') }
+		tipo: 'char' {result = CHAR }
+			| 'bool' {result = BOOL }
+			| 'int' {result = INT }
 			| 'matrix' '[' expresiones ']' 'of' tipo { result = Tipo.new('matrix',val[2],val[5]) }	
 
 		declaracion: 'var' declarables ':' tipo { result = val[1].map {|s| s.set_type(val[3])} }
@@ -147,7 +147,12 @@ class Parser
 		condicional: 'if' expresion '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3])}
 				   | 'if' expresion '->' instruccion 'otherwise' '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3],val[5])}
 
-		repeticion_det: 'for' 'id' 'from' expresion 'to' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7],nil)}
+		repeticion_det: 'for' 'id' 'from' expresion 'to' expresion '->' instruccion 'end'
+						{
+							arbol_rep = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7],nil)
+							tabla = TablaSimbolos.new([Simbolo.new(val[1],INT)])
+							result = ArbolBloque.new(arbol_rep,tabla)
+						}
 					  | 'for' 'id' 'from' expresion 'to' expresion 'step' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])}
 
 		repeticion_indet: 'while' expresion '->' instruccion 'end' {result = Arbol_Rep_Indet.new(nil, val[1], val[3])}
@@ -225,6 +230,8 @@ class ErrorSintactico < RuntimeError
 		"Error sintactico con el token \"#{@token.class.to_s}\" en la fila #{@token.linea}, columna: #{@token.columna}."
 	end
 end
+
+
 
 ---- inner 
 

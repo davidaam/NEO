@@ -12,5 +12,8 @@ begin
 		var a <- x+x: int
 	begin
 		a <- 4.
+		for i from 1 to 7 ->
+			a <- adkasj.
+		end
 	end
 end

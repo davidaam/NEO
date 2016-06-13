@@ -6,7 +6,11 @@ class TablaSimbolos
 		@hijos = []
 		@tabla = {}
 		lista_sim.each do |s|
-			@tabla[s.id] = s
+			if @tabla.has_key?(s.id)
+				throw ErrorRedeclaracion.new(s.id)
+			else
+				@tabla[s.id] = s
+			end
 		end
 	end
 	def add (simbolo)
@@ -28,7 +32,7 @@ class TablaSimbolos
 			rvalue = arbol_expr.eval(simbolo.tipo,self)
 			simbolo.update(rvalue)
 		else
-			throw new VariableNoDeclarada(id)
+			throw ErrorVariableNoDeclarada.new(id)
 		end
 	end
 	def to_s(nivel=0)
@@ -113,3 +117,35 @@ class ErrorDimensiones < RuntimeError
 		"Las dimensiones no cuadran: #{@dim1} != #{@dim2}"
 	end
 end
+
+class ErrorTipo < RuntimeError
+	def initialize(tipo_esperado, tipo_dado)
+		@tipo_esperado = tipo_esperado
+		@tipo_dado = tipo_dado
+	end
+	def to_s
+		"Se esperaba el tipo #{@tipo_esperado} pero se encontró #{@tipo_dado}"
+	end
+end
+
+class ErrorRedeclaracion < RuntimeError
+	def initialize(id)
+		@id = id
+	end
+	def to_s
+		"Se intentó redeclarar la variable #{@id}"
+	end
+end
+
+class ErrorVariableNoDeclarada < RuntimeError
+	def initialize(id)
+		@id = id
+	end
+	def to_s
+		"Se intentó utilizar la variable #{@id} no declarada"
+	end
+end
+# Tipos básicos
+BOOL = Tipo.new('bool')
+CHAR = Tipo.new('char')
+INT = Tipo.new('int')

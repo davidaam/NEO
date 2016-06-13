@@ -248,7 +248,7 @@ class Arbol_Expr_Char
 				operando_ascii = operando.codepoints.first
 				valor = (operando_ascii - 1).chr
 			when '#'
-				operando = @der.eval('char',tabla_sim)
+				operando = @der.eval(CHAR,tabla_sim)
 				valor = operando.codepoints.first
 		end
 		return valor		
@@ -261,36 +261,36 @@ class Arbol_Variable
 			if (e.tipo == tipo)
 				return e.valor
 			end
-			throw new ErrorTipo(tipo, e.tipo)
+			throw ErrorTipo.new(tipo, e.tipo)
 		end
-		throw new VariableNoDeclarada(@valor) 
+		throw VariableNoDeclarada.new(@valor) 
 	end
 end
 
 class Arbol_Literal_Bool
 	def eval (tipo, tabla_sim)
-		if tipo == 'bool'
+		if tipo == BOOL
 			return @valor
 		end
-		throw new ErrorTipo(tipo,'bool')
+		throw ErrorTipo.new(tipo,BOOL)
 	end
 end
 
 class Arbol_Literal_Char
 	def eval (tipo, tabla_sim)
-		if tipo == 'char'
+		if tipo == CHAR
 			return @valor
 		end
-		throw new ErrorTipo(tipo,'char')
+		throw ErrorTipo.new(tipo,CHAR)
 	end
 end
 
 class Arbol_Literal_Num
 	def eval (tipo, tabla_sim)
-		if tipo.tipo == 'int'
+		if tipo == INT
 			return Integer(@valor)
 		end
-		throw new ErrorTipo(tipo,'int')
+		throw ErrorTipo.new(tipo,INT)
 	end
 end
 
@@ -300,6 +300,6 @@ class Arbol_Literal_Matr
 		if tipo == 'int'
 			return @valor
 		end
-		throw new ErrorTipo(tipo,'int')
+		throw ErrorTipo.new(tipo,'int')
 	end
 end

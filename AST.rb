@@ -364,3 +364,24 @@ class Arbol_Literal_Matr
 		throw ErrorTipo.new(tipo,'int')
 	end
 end
+
+class Arbol_Print
+	def eval (tipo, tabla_sim)
+		@valor.eval(nil,tabla_sim)
+	end
+end
+
+class Arbol_Rep_Indet
+	def eval(tipo, tabla_sim)
+		@izq.eval(BOOL, tabla_sim)
+		@der.eval(nil, tabla_sim)
+	end
+end
+
+class Arbol_Condicional
+	def eval(tipo, tabla_sim)
+		@valor.eval(BOOL, tabla_sim)
+		@izq.eval(nil,tabla_sim)
+		@der.eval(nil,tabla_sim)
+	end
+end

@@ -1,5 +1,0 @@
-with
-	var bar : matrix [2,2] of int
-begin
-	bar <- ($(a::b::c::{}))[3,3,4][2].
-end

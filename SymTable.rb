@@ -1,3 +1,9 @@
+# CLASES:
+# 		TablaSimbolors
+# 		Simbolo
+# 		Tipo
+# 		ErrorDimensiones
+
 class TablaSimbolos
 	attr_reader :tabla
 	attr_accessor :padre, :hijos

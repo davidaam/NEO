@@ -1,3 +1,29 @@
+#!/usr/bin/ruby
+# encoding: utf-8
+
+# CLASES:
+# 		Object: Extencion, funcion _to_s para imprimir con identacion segun
+#				el nivel de profundidad en el programa
+# 		Array: 	Extencion, modificacion a _to_s
+# 		Arboles pertinentes para el programa creados de manera general y extenciones especificas a:
+# 			ArbolBloque
+# 			ArbolBinario
+# 			Arbol_Secuenciacion
+# 			Arbol_Rep_Det
+# 			Arbol_Expr_Aritm
+# 			Arbol_Expr_Bool
+# 			Arbol_Expr_Rel
+# 			Arbol_Expr_Unaria_Aritm
+# 			Arbol_Expr_Unaria_Bool
+# 			Arbol_Expr_Char
+# 			Arbol_Expr_Matr -------------(FALTA)
+# 			Arbol_Expr_Unaria_Matr ------(FALTA)
+# 			Arbol_Variable
+# 			Arbol_Literal_Bool
+# 			Arbol_Literal_Char
+# 			Arbol_Literal_Num
+# 			Arbol_Literal_Matr ----------(FALTA)
+
 # Defino _to_s para todos los objetos, _to_s es básicamente un to_s que toma un parámetro,
 # si la clase en cuestión no implementa _to_s, entonces simplemente se invoca to_s
 class Object
@@ -255,6 +281,30 @@ class Arbol_Expr_Char
 	end
 end
 
+# PENDIENTE CON EL CHEQUEO DE TIPOS, Los literales se interpretan segun el contexto
+class Arbol_Expr_Matr
+	def eval (tipo, tabla_sim)
+		# el unico operador es ::
+		op_izq = @izq.eval(tipo, tabla_sim)
+		op_der = @der.eval(tipo, tabla_sim)
+		# para concatenar Matrix.build(4,2){|row,col| row<2?  m[row,col] : a[row-2,col]}
+
+
+	end
+end
+
+class Arbol_Expr_Unaria_Matr
+	def eval (tipo, tabla_sim)
+		operando = @der.eval(tipo, tabla_sim)
+		operador = @valor
+		case operador
+			when '$'
+			when '?'
+			when '[]'
+		end
+	end
+end
+
 class Arbol_Variable
 	def eval (tipo, tabla_sim)
 		if (e = tabla_sim.get(@valor))
@@ -294,7 +344,6 @@ class Arbol_Literal_Num
 	end
 end
 
-# Que es lo que se hara con matriz ##################################################################
 class Arbol_Literal_Matr
 	def eval (tipo, tabla_sim)
 		if tipo == 'int'

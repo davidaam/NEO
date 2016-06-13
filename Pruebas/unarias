@@ -9,7 +9,7 @@ begin
 	w <- #'a'.
 
 	with
-		var a <- x+x: int
+		var a <- true+true: bool
 	begin
 		a <- 4.
 		for i from 1 to 7 ->

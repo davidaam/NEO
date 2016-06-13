@@ -52,10 +52,11 @@ end
 class Simbolo
 	attr_reader :id , :tipo
 	attr_accessor :valor
-	def initialize (tkid, tipo=nil, valor = nil)
+	def initialize (tkid, tipo=nil,valor = nil,protegida=false)
 		@id = tkid.valor
 		@tipo = tipo
 		@valor = valor
+		@protegida = protegida
 	end
 	def set_type(tipo)
 		@tipo = tipo
@@ -63,7 +64,7 @@ class Simbolo
 	end
 	def eval(tabla)
 		@tipo.eval(tabla)
-		@valor = @valor.eval(@tipo,tabla) if @valor != nil
+		@valor = @valor.eval(@tipo,tabla)['valor'] if @valor != nil
 	end
 	def to_s(nivel = 0)
 		tabs = "\t" * nivel

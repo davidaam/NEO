@@ -388,8 +388,8 @@ end
 
 class Arbol_Read
 	def eval (tipo, tabla_sim)
-		e = @valor.eval(nil, tabla_sim)
-		return {"tipo" => e.tipo, "valor" => e.valor}
+		puts @valor.class
+		@valor.eval(nil, tabla_sim)
 	end
 end
 class Arbol_Print

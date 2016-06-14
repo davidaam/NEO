@@ -150,7 +150,8 @@ class Parser
 		repeticion_det: 'for' 'id' 'from' expresion 'to' expresion '->' instruccion 'end'
 						{
 							arbol_rep = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7],nil)
-							tabla = TablaSimbolos.new([Simbolo.new(val[1],INT)])
+							simbolo_id = Simbolo.new(val[1],INT,val[3],true)
+							tabla = TablaSimbolos.new([simbolo_id])
 							result = ArbolBloque.new(arbol_rep,tabla)
 						}
 					  | 'for' 'id' 'from' expresion 'to' expresion 'step' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])}
@@ -261,8 +262,14 @@ end
 
 # Si no hay errores léxicos, se procede a hacer el análisis sintáctico
 if l.errores.empty?
-	p = Parser.new(l.tokens)
-	x = p.parse
-	x.eval
-	puts x
+	begin
+		p = Parser.new(l.tokens)
+		x = p.parse
+		x.eval
+		puts x
+	rescue ErrorSintactico => e
+		puts "Error sintactico: #{e}"
+	rescue ErrorEstatico => e
+		puts "Error estático: #{e}"
+	end
 end

@@ -13,14 +13,15 @@ class TablaSimbolos
 		@tabla = {}
 		lista_sim.each do |s|
 			if @tabla.has_key?(s.id)
-				throw ErrorRedeclaracion.new(s.id)
+				raise ErrorRedeclaracion.new(s.id)
 			else
-				@tabla[s.id] = s
+				add(s)
 			end
 		end
 	end
 	def add (simbolo)
-		@tabla[simbolo.id] = simbolo
+		simbolo.eval(@tabla)
+		@tabla[simbolo.id] = simbolo 
 	end
 	def get (id)
 		e = self
@@ -35,17 +36,16 @@ class TablaSimbolos
 	def update(lvalue, arbol_expr)
 		simbolo = get(lvalue)
 		if simbolo != nil
-			rvalue = arbol_expr.eval(simbolo.tipo,self)
-			simbolo.update(rvalue)
+			rvalue = arbol_expr.eval(simbolo.tipo,self)['valor']
+			simbolo.valor = rvalue
 		else
-			throw ErrorVariableNoDeclarada.new(id)
+			raise ErrorVariableNoDeclarada.new(id)
 		end
 	end
 	def to_s(nivel=0)
 		tabs = ("\t" * nivel)
 		str = tabs + "TABLA DE SIMBOLOS\n"
 		@tabla.each do |id,simbolo|
-			simbolo.eval(self)
 			str += simbolo.to_s(nivel+1) + "\n"
 		end
 		@hijos.each do |tabla_h|
@@ -56,7 +56,7 @@ class TablaSimbolos
 end
 
 class Simbolo
-	attr_reader :id , :tipo
+	attr_reader :id , :tipo, :protegida
 	attr_accessor :valor
 	def initialize (tkid, tipo=nil,valor = nil,protegida=false)
 		@id = tkid.valor
@@ -70,8 +70,6 @@ class Simbolo
 	end
 	def eval(tabla)
 		@tipo.eval(tabla)
-		puts "ID: #{@id} TIPO #{@tipo.class}"
-		puts @valor
 		@valor = @valor.eval(@tipo,tabla)['valor'] if @valor != nil
 	end
 	def to_s(nivel = 0)
@@ -104,7 +102,7 @@ class Tipo
 			end
 		# Si al menos uno es distinto de nil
 		elsif @dimensiones != x.dimensiones
-			throw ErrorDimensiones.new(@dimensiones,x.dimensiones)
+			raise ErrorDimensiones.new(@dimensiones,x.dimensiones)
 		end
 		eq
 	end
@@ -117,7 +115,11 @@ class Tipo
 end
 
 # Errores
-class ErrorDimensiones < RuntimeError
+
+class ErrorEstatico < RuntimeError
+end
+
+class ErrorDimensiones < ErrorEstatico
 	def initialize(dim1,dim2)
 		@dim1 = dim1
 		@dim2 = dim2
@@ -127,17 +129,21 @@ class ErrorDimensiones < RuntimeError
 	end
 end
 
-class ErrorTipo < RuntimeError
-	def initialize(tipo_esperado, tipo_dado)
-		@tipo_esperado = tipo_esperado
+class ErrorTipo < ErrorEstatico
+	def initialize(tipo_dado, *tipos_esperados)
+		@tipos_esperados = tipos_esperados
 		@tipo_dado = tipo_dado
 	end
 	def to_s
-		"Se esperaba el tipo #{@tipo_esperado} pero se encontró #{@tipo_dado}"
+		if @tipos_esperados.length == 1
+			"Se esperaba el tipo #{@tipos_esperados[0]} pero se encontró #{@tipo_dado}"
+		else
+			"Se esperaba o #{@tipos_esperados.join(" o ")}pero se encontró #{@tipo_dado}"
+		end
 	end
 end
 
-class ErrorRedeclaracion < RuntimeError
+class ErrorRedeclaracion < ErrorEstatico
 	def initialize(id)
 		@id = id
 	end
@@ -146,12 +152,21 @@ class ErrorRedeclaracion < RuntimeError
 	end
 end
 
-class ErrorVariableNoDeclarada < RuntimeError
+class ErrorVariableNoDeclarada < ErrorEstatico
 	def initialize(id)
 		@id = id
 	end
 	def to_s
 		"Se intentó utilizar la variable #{@id} no declarada"
+	end
+end
+
+class ErrorModificacionVariableProtegida < ErrorEstatico
+	def initialize(id)
+		@id = id
+	end
+	def to_s
+		"Se intentó modificar la variable de control #{@id}"
 	end
 end
 # Tipos básicos

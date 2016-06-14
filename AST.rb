@@ -47,7 +47,6 @@ class Array
 	end
 end
 
-# TODO: Las expresiones unarias son un caso particular, hay que interpretar "prefijo" y "posfijo"
 ARBOLES = {
 	'Expr_Aritm' => ["Operador", "Operando izquierdo", "Operando derecho"],
 	'Expr_Bool' => ["Operador", "Operando izquierdo", "Operando derecho"],
@@ -78,6 +77,7 @@ class ArbolBloque
 	end
 	def set_tabla_padre (padre)
 		@tabla.padre = padre
+		@instr.set_tabla_padre(self)
 		padre.hijos << @tabla
 	end
 	def to_s
@@ -86,7 +86,7 @@ class ArbolBloque
 		#str += "AST\n" + @instr.to_s
 		str
 	end
-	def eval
+	def eval(a=nil,b=nil)
 		@instr.eval(nil,@tabla)
 	end
 end
@@ -153,7 +153,7 @@ end
 
 # Definimos la clase para modelar el árbol de una repetición determinada
 class Arbol_Rep_Det
-	def initialize (tkid, from, to, instruccion, step = 1)
+	def initialize (tkid, from, to, instruccion, step = Arbol_Literal_Num.new(1))
 		@from = from
 		@to = to
 		@step = step
@@ -175,6 +175,15 @@ class Arbol_Rep_Det
 		str += tabs + "Paso: #{@step._to_s(nivel+1)}\n"
 		str += tabs + "Instrucción: #{@instruccion._to_s(nivel+1)}\n"
 		str
+	end
+
+	def set_tabla_padre(padre) end
+
+	def eval(tipo, tabla)
+		@from.eval(INT, tabla)
+		@to.eval(INT, tabla)
+		@step.eval(INT, tabla) unless @step.nil?
+		@instruccion.eval(nil, tabla)
 	end
 end
 
@@ -203,8 +212,8 @@ end
 
 class Arbol_Expr_Aritm
 	def eval (tipo, tabla_sim)
-		if tipo != INT or tipo != nil
-			throw ErrorTipo.new(INT,tipo)
+		if tipo and tipo != INT
+			raise ErrorTipo.new(tipo,INT)
 		end
 		op_izq = @izq.eval(INT, tabla_sim)['valor']
 		op_der = @der.eval(INT, tabla_sim)['valor']
@@ -226,8 +235,8 @@ end
 
 class Arbol_Expr_Bool
 	def eval (tipo, tabla_sim)
-		if tipo != BOOL or tipo != nil
-			throw ErrorTipo.new(BOOL,tipo)
+		if tipo and tipo != BOOL
+			raise ErrorTipo.new(tipo,BOOL)
 		end
 		op_izq = @izq.eval(BOOL, tabla_sim)['valor']
 		op_der = @der.eval(BOOL, tabla_sim)['valor']
@@ -243,13 +252,13 @@ end
 
 class Arbol_Expr_Rel
 	def eval (tipo, tabla_sim)
-		if tipo != BOOL or tipo != nil
-			throw ErrorTipo.new(BOOL,tipo)
+		if tipo and tipo != BOOL
+			raise ErrorTipo.new(tipo,BOOL)
 		end		
 		op_izq = @izq.eval(tipo, tabla_sim)
 		op_der = @der.eval(op_izq.tipo, tabla_sim)
 		if op_izq.tipo == op_der.tipo
-			throw ErrorTipo.new(op_izq.tipo,op_der.tipo)
+			raise ErrorTipo.new(op_der.tipo,op_izq.tipo)
 		else
 			op_izq = op_izq['valor']
 			op_der = op_der['valor']
@@ -272,8 +281,8 @@ end
 
 class Arbol_Expr_Unaria_Aritm
 	def eval (tipo, tabla_sim)
-		if tipo != INT or tipo != nil
-			throw ErrorTipo.new(INT,tipo)
+		if tipo and tipo != INT
+			raise ErrorTipo.new(tipo,INT)
 		end
 		operando = @der.eval(INT, tabla_sim)['valor']
 		# El único operador unario es -
@@ -283,8 +292,8 @@ end
 
 class Arbol_Expr_Unaria_Bool
 	def eval (tipo, tabla_sim)
-		if tipo != BOOL or tipo != nil
-			throw ErrorTipo.new(BOOL,tipo)
+		if tipo and tipo != BOOL
+			raise ErrorTipo.new(tipo,BOOL)
 		end
 		operando = @der.eval(BOOL, tabla_sim)['valor']
 		# El único operador unario es not
@@ -298,26 +307,25 @@ class Arbol_Expr_Char
 		tipo_retornado = CHAR
 		case operador
 			when '++'
-				if tipo == CHAR or !tipo
+				if !tipo or tipo == CHAR
 					operando = @der.eval(CHAR, tabla_sim)['valor']
 					operando_ascii = operando.codepoints.first
 					return {"tipo" => CHAR, "valor" => (operando_ascii + 1).chr}
 				end
 			when '--'
-				if tipo == CHAR or !tipo
+				if !tipo or tipo == CHAR
 					operando = @der.eval(CHAR, tabla_sim)['valor']
 					operando_ascii = operando.codepoints.first
 					return {"tipo" => CHAR, "valor" => (operando_ascii - 1).chr}
 				end
 			when '#'
 				tipo_retornado = INT
-				if tipo == INT or !tipo
-					puts "HEYYY : #{tipo}"
+				if !tipo or tipo == INT
 					operando = @der.eval(CHAR, tabla_sim)['valor']
 					return {"tipo" => INT, "valor" => operando.codepoints.first}
 				end
 		end
-		throw ErrorTipo.new(tipo,tipo_retornado)
+		raise ErrorTipo.new(tipo_retornado,tipo)
 	end
 end
 
@@ -353,36 +361,36 @@ class Arbol_Variable
 			if (!tipo or e.tipo == tipo)
 				return {"tipo" => e.tipo, "valor" => e.valor}
 			end
-			throw ErrorTipo.new(tipo, e.tipo)
+			raise ErrorTipo.new(tipo, e.tipo)
 		end
-		throw VariableNoDeclarada.new(@valor) 
+		raise VariableNoDeclarada.new(@valor) 
 	end
 end
 
 class Arbol_Literal_Bool
 	def eval (tipo, tabla_sim)
-		if tipo == BOOL or !tipo
+		if !tipo or tipo == BOOL
 			return {"tipo" => BOOL, "valor" => @valor}
 		end
-		throw ErrorTipo.new(tipo,BOOL)
+		raise ErrorTipo.new(BOOL,tipo)
 	end
 end
 
 class Arbol_Literal_Char
 	def eval (tipo, tabla_sim)
-		if tipo == CHAR or !tipo
+		if !tipo or tipo == CHAR
 			return {"tipo" => CHAR, "valor" => @valor}
 		end
-		throw ErrorTipo.new(tipo,CHAR)
+		raise ErrorTipo.new(CHAR,tipo)
 	end
 end
 
 class Arbol_Literal_Num
 	def eval (tipo, tabla_sim)
-		if tipo == INT or !tipo
+		if !tipo or tipo == INT
 			return {"tipo" => INT, "valor" => Integer(@valor)}
 		end
-		throw ErrorTipo.new(tipo,INT)
+		raise ErrorTipo.new(INT,tipo)
 	end
 end
 
@@ -391,13 +399,23 @@ class Arbol_Literal_Matr
 		if tipo == 'int'
 			return @valor
 		end
-		throw ErrorTipo.new(tipo,'int')
+		raise ErrorTipo.new(tipo,'int')
 	end
 end
 
 class Arbol_Read
 	def eval (tipo, tabla_sim)
-		@valor.eval(nil, tabla_sim)
+		variable = @valor.valor
+		if (e = tabla_sim.get(variable))
+			if e.protegida
+				raise ErrorModificacionVariableProtegida.new(variable)
+			end
+			if e.tipo.tipo != "matrix"
+				return {"tipo" => e.tipo, "valor" => e.valor}
+			else
+				raise ErrorTipo.new(tipo,INT,BOOL,CHAR)
+			end
+		end
 	end
 end
 class Arbol_Print
@@ -418,5 +436,24 @@ class Arbol_Condicional
 		@valor.eval(BOOL, tabla_sim)
 		@izq.eval(nil,tabla_sim)
 		@der.eval(nil,tabla_sim)
+	end
+end
+
+class Arbol_Asignacion
+	def eval(tipo, tabla_sim)
+		variable = @izq.valor
+		@izq.eval(tipo, tabla_sim)
+		if (e = tabla_sim.get(variable))
+			if (e.protegida)
+				raise ErrorModificacionVariableProtegida.new(variable)
+			end
+			if (!tipo or e.tipo == tipo)
+				tabla_sim.update(variable,@der)
+			else
+				raise ErrorTipo.new(e.tipo,tipo)
+			end
+		else
+			raise ErrorVariableNoDeclarada.new(variable)
+		end
 	end
 end

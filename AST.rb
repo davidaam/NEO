@@ -78,7 +78,9 @@ class ArbolBloque
 	def set_tabla_padre (padre)
 		@tabla.padre = padre
 		@instr.set_tabla_padre(self)
-		padre.hijos << @tabla
+		
+		#QUE QUERIAS HACER CON ESTO????
+		#padre.hijos << @tabla
 	end
 	def to_s
 		#str = "IMPRESION\n"
@@ -100,8 +102,15 @@ class ArbolBinario
 	def initialize (token = nil, izq = nil, der = nil)
 		# Si es un token, entonces guardo como valor el valor, si no, guardo directamente lo pasado.
 		@valor = token.class.superclass == Token ? token.valor : token
+		if token.class.superclass != Token 
+			puts token
+			puts token.class.superclass
+			puts token.class
+			puts '==========='
+		end
 		@izq = izq
 		@der = der
+		@posicion = token.class.superclass == Token ? {"linea" => token.linea, "columna" => token.columna} : nil
 	end
 
 	# Defino to_s como un alias de _to_s
@@ -213,7 +222,7 @@ end
 class Arbol_Expr_Aritm
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != INT
-			raise ErrorTipo.new(tipo,INT)
+			raise ErrorTipo.new(tipo, @posicion,INT)
 		end
 		op_izq = @izq.eval(INT, tabla_sim)['valor']
 		op_der = @der.eval(INT, tabla_sim)['valor']
@@ -236,7 +245,7 @@ end
 class Arbol_Expr_Bool
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != BOOL
-			raise ErrorTipo.new(tipo,BOOL)
+			raise ErrorTipo.new(tipo,@posicion,BOOL)
 		end
 		op_izq = @izq.eval(BOOL, tabla_sim)['valor']
 		op_der = @der.eval(BOOL, tabla_sim)['valor']
@@ -253,12 +262,12 @@ end
 class Arbol_Expr_Rel
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != BOOL
-			raise ErrorTipo.new(tipo,BOOL)
+			raise ErrorTipo.new(tipo,@posicion,BOOL)
 		end		
 		op_izq = @izq.eval(tipo, tabla_sim)
 		op_der = @der.eval(op_izq.tipo, tabla_sim)
 		if op_izq.tipo == op_der.tipo
-			raise ErrorTipo.new(op_der.tipo,op_izq.tipo)
+			raise ErrorTipo.new(op_der.tipo,@posicion,op_izq.tipo)
 		else
 			op_izq = op_izq['valor']
 			op_der = op_der['valor']
@@ -282,7 +291,7 @@ end
 class Arbol_Expr_Unaria_Aritm
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != INT
-			raise ErrorTipo.new(tipo,INT)
+			raise ErrorTipo.new(tipo, @posicion,INT)
 		end
 		operando = @der.eval(INT, tabla_sim)['valor']
 		# El único operador unario es -
@@ -293,7 +302,7 @@ end
 class Arbol_Expr_Unaria_Bool
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != BOOL
-			raise ErrorTipo.new(tipo,BOOL)
+			raise ErrorTipo.new(tipo, @posicion,BOOL)
 		end
 		operando = @der.eval(BOOL, tabla_sim)['valor']
 		# El único operador unario es not
@@ -325,7 +334,7 @@ class Arbol_Expr_Char
 					return {"tipo" => INT, "valor" => operando.codepoints.first}
 				end
 		end
-		raise ErrorTipo.new(tipo_retornado,tipo)
+		raise ErrorTipo.new(tipo_retornado,@posicion,tipo)
 	end
 end
 
@@ -361,9 +370,9 @@ class Arbol_Variable
 			if (!tipo or e.tipo == tipo)
 				return {"tipo" => e.tipo, "valor" => e.valor}
 			end
-			raise ErrorTipo.new(tipo, e.tipo)
+			raise ErrorTipo.new(tipo,@posicion, e.tipo)
 		end
-		raise VariableNoDeclarada.new(@valor) 
+		raise ErrorVariableNoDeclarada.new(@valor,@posicion) 
 	end
 end
 
@@ -372,7 +381,8 @@ class Arbol_Literal_Bool
 		if !tipo or tipo == BOOL
 			return {"tipo" => BOOL, "valor" => @valor}
 		end
-		raise ErrorTipo.new(BOOL,tipo)
+		puts @posicion
+		raise ErrorTipo.new(BOOL, @posicion,tipo)
 	end
 end
 
@@ -381,7 +391,7 @@ class Arbol_Literal_Char
 		if !tipo or tipo == CHAR
 			return {"tipo" => CHAR, "valor" => @valor}
 		end
-		raise ErrorTipo.new(CHAR,tipo)
+		raise ErrorTipo.new(CHAR, @posicion,tipo)
 	end
 end
 
@@ -390,7 +400,7 @@ class Arbol_Literal_Num
 		if !tipo or tipo == INT
 			return {"tipo" => INT, "valor" => Integer(@valor)}
 		end
-		raise ErrorTipo.new(INT,tipo)
+		raise ErrorTipo.new(INT, @posicion,tipo)
 	end
 end
 
@@ -399,7 +409,7 @@ class Arbol_Literal_Matr
 		if tipo == 'int'
 			return @valor
 		end
-		raise ErrorTipo.new(tipo,'int')
+		raise ErrorTipo.new(tipo, @posicion,'int')
 	end
 end
 
@@ -408,12 +418,12 @@ class Arbol_Read
 		variable = @valor.valor
 		if (e = tabla_sim.get(variable))
 			if e.protegida
-				raise ErrorModificacionVariableProtegida.new(variable)
+				raise ErrorModificacionVariableProtegida.new(variable, @posicion)
 			end
 			if e.tipo.tipo != "matrix"
 				return {"tipo" => e.tipo, "valor" => e.valor}
 			else
-				raise ErrorTipo.new(tipo,INT,BOOL,CHAR)
+				raise ErrorTipo.new(tipo, @posicion,INT,BOOL,CHAR)
 			end
 		end
 	end
@@ -445,15 +455,15 @@ class Arbol_Asignacion
 		@izq.eval(tipo, tabla_sim)
 		if (e = tabla_sim.get(variable))
 			if (e.protegida)
-				raise ErrorModificacionVariableProtegida.new(variable)
+				raise ErrorModificacionVariableProtegida.new(variable, @posicion)
 			end
 			if (!tipo or e.tipo == tipo)
-				tabla_sim.update(variable,@der)
+				tabla_sim.update(variable,@der,@posicion)
 			else
-				raise ErrorTipo.new(e.tipo,tipo)
+				raise ErrorTipo.new(e.tipo, @posicion,tipo)
 			end
 		else
-			raise ErrorVariableNoDeclarada.new(variable)
+			raise ErrorVariableNoDeclarada.new(variable, @posicion)
 		end
 	end
 end

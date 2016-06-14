@@ -1,3 +1,6 @@
+#!/usr/bin/ruby
+# encoding: utf-8
+
 # CLASES:
 # 		TablaSimbolors
 # 		Simbolo
@@ -13,7 +16,7 @@ class TablaSimbolos
 		@tabla = {}
 		lista_sim.each do |s|
 			if @tabla.has_key?(s.id)
-				raise ErrorRedeclaracion.new(s.id)
+				raise ErrorRedeclaracion.new(s.id, s.ultima_Posicion)
 			else
 				add(s)
 			end
@@ -33,13 +36,13 @@ class TablaSimbolos
 		end
 		return nil
 	end
-	def update(lvalue, arbol_expr)
+	def update(lvalue, arbol_expr, posicion)
 		simbolo = get(lvalue)
 		if simbolo != nil
 			rvalue = arbol_expr.eval(simbolo.tipo,self)['valor']
 			simbolo.valor = rvalue
 		else
-			raise ErrorVariableNoDeclarada.new(id)
+			raise ErrorVariableNoDeclarada.new(id, posicion)
 		end
 	end
 	def to_s(nivel=0)
@@ -57,12 +60,13 @@ end
 
 class Simbolo
 	attr_reader :id , :tipo, :protegida
-	attr_accessor :valor
+	attr_accessor :valor, :ultima_Posicion
 	def initialize (tkid, tipo=nil,valor = nil,protegida=false)
 		@id = tkid.valor
 		@tipo = tipo
 		@valor = valor
 		@protegida = protegida
+		@ultima_Posicion = {"linea" => tkid.linea, "columna" => tkid.columna}
 	end
 	def set_type(tipo)
 		@tipo = tipo
@@ -89,7 +93,7 @@ class Tipo
 	end
 	def eval(tabla)
 		@dimensiones.map! {|dim| dim.eval(Tipo.new('int'),tabla)} unless @dimensiones == nil
-		@tipo_param.eval(tabla) unless @tipo_param == nil
+		@tipo_param.eval(tabla) unless !(@tipo_param)
 	end
 	def ==(x)
 		eq = @tipo == x.tipo
@@ -123,50 +127,61 @@ class ErrorDimensiones < ErrorEstatico
 	def initialize(dim1,dim2)
 		@dim1 = dim1
 		@dim2 = dim2
+		#@linea = posicion["linea"]
+		#@columna = posicion["columna"]
 	end
 	def to_s
+		#"En la linea: #{@linea} y columna: #{@columna}, Las dimensiones no cuadran: #{@dim1} != #{@dim2}"
 		"Las dimensiones no cuadran: #{@dim1} != #{@dim2}"
 	end
 end
 
 class ErrorTipo < ErrorEstatico
-	def initialize(tipo_dado, *tipos_esperados)
+	def initialize(tipo_dado, posicion, *tipos_esperados)
 		@tipos_esperados = tipos_esperados
 		@tipo_dado = tipo_dado
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
 	end
 	def to_s
 		if @tipos_esperados.length == 1
-			"Se esperaba el tipo #{@tipos_esperados[0]} pero se encontró #{@tipo_dado}"
+			"En la linea: #{@linea} y columna: #{@columna}, Se esperaba el tipo #{@tipos_esperados[0]} pero se encontró #{@tipo_dado}"
 		else
-			"Se esperaba o #{@tipos_esperados.join(" o ")}pero se encontró #{@tipo_dado}"
+			"En la linea: #{@linea} y columna: #{@columna}, Se esperaba o #{@tipos_esperados.join(" o ")}pero se encontró #{@tipo_dado}"
 		end
 	end
 end
 
 class ErrorRedeclaracion < ErrorEstatico
-	def initialize(id)
+	def initialize(id, posicion)
 		@id = id
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
 	end
 	def to_s
-		"Se intentó redeclarar la variable #{@id}"
+		"En la linea: #{@linea} y columna: #{@columna}, Se intentó redeclarar la variable #{@id}"
 	end
 end
 
 class ErrorVariableNoDeclarada < ErrorEstatico
-	def initialize(id)
+	def initialize(id, posicion)
 		@id = id
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
 	end
 	def to_s
-		"Se intentó utilizar la variable #{@id} no declarada"
+		"En la linea: #{@linea} y columna: #{@columna}, Se intentó utilizar la variable #{@id} no declarada"
 	end
 end
 
 class ErrorModificacionVariableProtegida < ErrorEstatico
-	def initialize(id)
+	def initialize(id, posicion)
 		@id = id
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
 	end
 	def to_s
-		"Se intentó modificar la variable de control #{@id}"
+		"En la linea: #{@linea} y columna: #{@columna}, Se intentó modificar la variable de control #{@id}"
 	end
 end
 # Tipos básicos

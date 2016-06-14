@@ -9,11 +9,11 @@ begin
 	w <- #'a'.
 
 	with
-		var a <- true+true: bool
+		var a <- true/\true: bool
 	begin
-		a <- 4.
+		a <- false.
 		for i from 1 to 7 ->
-			a <- adkasj.
+			a <- true.
 		end
 	end
 end

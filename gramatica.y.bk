@@ -112,8 +112,8 @@ class Parser
 		contenedor: 'id' {result = Arbol_Variable.new(val[0])}
 			 	  | contenedor '[' expresiones ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
 		
-		literal: 'true' {result = Arbol_Literal_Bool.new(val[0])}
-			   | 'false' {result = Arbol_Literal_Bool.new(val[0])}
+		literal: 'true' {result = Arbol_Literal_Bool.new('True')}
+			   | 'false' {result = Arbol_Literal_Bool.new('False')}
 			   | 'numero' {result = Arbol_Literal_Num.new(val[0])}
 			   | 'caracter' {result = Arbol_Literal_Char.new(val[0])}
 			   | matriz {result = val[0]}
@@ -170,7 +170,7 @@ class Parser
 					   | expresion '-' expresion {result = Arbol_Expr_Aritm.new('-',val[0],val[2])}
 					   | expresion '*' expresion {result = Arbol_Expr_Aritm.new('*',val[0],val[2])}
 					   | expresion '/' expresion {result = Arbol_Expr_Aritm.new('/',val[0],val[2])}
-					   | expresion '%' expresion {result = Arbol_Expr_Aritm.new('%',val[0],val[2])}
+					   | expresion '%' expresion {result = Arbol_Expr_Aritm.new(val[1],val[0],val[2])}
 					   | '-' expresion =MENOS_UNARIO {result = Arbol_Expr_Unaria_Aritm.new(nil,'-',val[1])}
 
 		expresion_bool: expresion '/\\' expresion {result = Arbol_Expr_Bool.new('/\\',val[0],val[2])}

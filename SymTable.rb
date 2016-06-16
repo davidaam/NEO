@@ -33,7 +33,7 @@ class TablaSimbolos
 	def get (id)
 		e = self
 		while e != nil
-			binding.pry
+			#binding.pry
 			if e.tabla.has_key?(id) and (e.tabla[id].valor == nil or e.tabla[id].valor.class.superclass != ArbolBinario)
 				return e.tabla[id]
 			end

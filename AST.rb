@@ -77,6 +77,8 @@ class ArbolBloque
 		@tabla = tabla
 	end
 	def set_tabla_padre (padre)
+		#puts @tabla.class
+		#puts @instr.class FALLA 2_general.neo con read
 		@tabla.padre = padre
 		@instr.set_tabla_padre(self)
 	end

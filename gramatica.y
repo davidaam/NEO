@@ -103,13 +103,13 @@ class Parser
 		declarable: 'id' '<-' expresion {
 			simbolo = Simbolo.new(val[0],nil)
 			variable = Arbol_Variable.new(val[0])
-			asignacion = Arbol_Asignacion.new(nil,variable,expresion)
+			asignacion = Arbol_Asignacion.new(nil,variable,val[2])
 			result = [simbolo, asignacion]
-			}
+		}
 				  | 'id' {result = [Simbolo.new(val[0]),nil] }
 
 		declarables: declarables ',' declarable { result = val[0] << val[2] }
-				   | declarable { result = [val[0]] }
+				   | declarable { result = val[0] }
 
 		valor: contenedor {result = val[0]}
 			 | literal {result = val[0]}

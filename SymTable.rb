@@ -15,6 +15,7 @@ class TablaSimbolos
 		@tabla = {}
 		@asignaciones = []
 		lista_sim_asig.each do |tupla|
+			binding.pry
 			simbolo = tupla[0]
 			asignacion = tupla[1]
 			if @tabla.has_key?(simbolo.id)

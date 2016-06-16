@@ -488,7 +488,7 @@ class Arbol_Asignacion
 			if (!tipo and e.tipo == tipo_valor)
 				tabla_sim.update(variable,@der)
 			else
-				raise ErrorTipo.new(pos,e.tipo,tipo)
+				raise ErrorTipo.new(pos,e.tipo,tipo_valor)
 			end
 		else
 			raise ErrorVariableNoDeclarada.new(pos,variable)

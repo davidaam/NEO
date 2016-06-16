@@ -80,13 +80,15 @@ class Parser
 		'while' 'TkWhile'
 	end
 	start bloque
-	rule
+	rule 
 		bloque: 'with' declaraciones 'begin' instruccion 'end'
 				{ tabla = TablaSimbolos.new(val[1])
 				  val[3].set_tabla_padre(tabla)
 				  result = ArbolBloque.new(val[3],tabla)
 				}
-			  | 'begin' instruccion 'end' {result = ArbolBloque.new(val[1],TablaSimbolos.new([]))}
+			  | 'begin' instruccion 'end' {
+				  binding.pry
+					result = ArbolBloque.new(val[1],TablaSimbolos.new())}
 
 		# Restringimos en la gramática que la especificación de las dimensiones de las matrices
 		# se hace estrictamente con literales numéricos
@@ -95,20 +97,26 @@ class Parser
 			| 'int' {result = INT }
 			| 'matrix' '[' expresiones ']' 'of' tipo { result = Tipo.new('matrix',val[2],val[5]) }	
 
-		declaracion: 'var' declarables ':' tipo { result = val[1].map {|l| l[0].set_type(val[3])} }
+		declaracion: 'var' declarables ':' tipo { 
+		binding.pry
+		result = val[1].map {|l| [l[0].set_type(val[3]),l[1]] }
+		}
 
-		declaraciones: declaraciones declaracion {result = val[0] + val[1] }
-					 | declaracion {result = val[0] }
+		declaraciones: declaraciones declaracion {
+		result = val[0] + val[1] }
+					 | declaracion {
+				 		binding.pry
+						result = val[0] }
 
 		declarable: 'id' '<-' expresion {
 			simbolo = Simbolo.new(val[0],nil)
 			variable = Arbol_Variable.new(val[0])
 			asignacion = Arbol_Asignacion.new(nil,variable,val[2])
-			result = [simbolo, asignacion]
+			result = [[simbolo, asignacion]]
 		}
-				  | 'id' {result = [Simbolo.new(val[0]),nil] }
+				  | 'id' {result = [[Simbolo.new(val[0]),nil]] }
 
-		declarables: declarables ',' declarable { result = val[0] << val[2] }
+		declarables: declarables ',' declarable { result = val[0] + val[2] }
 				   | declarable { result = val[0] }
 
 		valor: contenedor {result = val[0]}
@@ -150,13 +158,14 @@ class Parser
 		secuenciacion: instrucciones instruccion_unica {result = Arbol_Secuenciacion.new(val[0] << val[1],nil)}
 
 		condicional: 'if' expresion '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3])}
-				   | 'if' expresion '->' instruccion 'otherwise' '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3],val[5])}
+				   | 'if' expresion '->' instruccion 'otherwise' '->' instruccion 'end' {result = Arbol_Condicional.new(val[1],val[3],val[6])}
 
 		repeticion_det: 'for' 'id' 'from' expresion 'to' expresion '->' instruccion 'end'
 						{
-							arbol_rep = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7],nil)
-							simbolo_id = Simbolo.new(val[1],INT,val[3],true)
-							tabla = TablaSimbolos.new([simbolo_id])
+							arbol_rep = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7])
+							simbolo_id = Simbolo.new(val[1],INT,nil,true)
+							tabla = TablaSimbolos.new([[simbolo_id,nil]])
+							binding.pry
 							result = ArbolBloque.new(arbol_rep,tabla)
 						}
 					  | 'for' 'id' 'from' expresion 'to' expresion 'step' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])}

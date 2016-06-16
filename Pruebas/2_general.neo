@@ -1,18 +1,20 @@
 with
 	var n <- 5 : int
+	var j:int
+	var x:bool
 begin 
-    if n > cangrejo -> 
-			f <- not perro. 
+    if n > n -> 
+		x <- not true . 
 		otherwise -> print  2%j.
 	end
 
-	for string from false to 
-		'p' -> print 'g'.
+	for string from false to 'p' ->
+		print string.
 	end 
 
-	read k.
+	read x.
 
 	begin
-		print Bool :: 4 .
+		print n .
 	end 
 end

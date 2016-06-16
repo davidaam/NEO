@@ -10,12 +10,12 @@
 class TablaSimbolos
 	attr_reader :tabla, :asignaciones
 	attr_accessor :padre
-	def initialize (lista_sim_asig, padre = nil)
+	def initialize (lista_sim_asig=[], padre = nil)
 		@padre = padre
 		@tabla = {}
 		@asignaciones = []
 		lista_sim_asig.each do |tupla|
-			binding.pry
+			
 			simbolo = tupla[0]
 			asignacion = tupla[1]
 			if @tabla.has_key?(simbolo.id)
@@ -40,7 +40,7 @@ class TablaSimbolos
 	def get (id)
 		e = self
 		while e != nil
-			#binding.pry
+			#
 			if e.tabla.has_key?(id) and (e.tabla[id].valor == nil or e.tabla[id].valor.class.superclass != ArbolBinario)
 				return e.tabla[id]
 			end

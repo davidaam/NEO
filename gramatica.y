@@ -199,6 +199,8 @@ class Parser
 #!/usr/bin/ruby
 # encoding: utf-8
 
+# Debugger
+require 'pry'
 require_relative 'SymTable'
 require_relative 'AST'
 require_relative 'Lexer'

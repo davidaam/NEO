@@ -9,52 +9,46 @@
 
 class TablaSimbolos
 	attr_reader :tabla
-	attr_accessor :padre, :hijos
+	attr_accessor :padre
 	def initialize (lista_sim, padre = nil)
 		@padre = padre
-		@hijos = []
 		@tabla = {}
 		lista_sim.each do |s|
 			if @tabla.has_key?(s.id)
-				raise ErrorRedeclaracion.new(s.id, s.ultima_Posicion)
+				raise ErrorRedeclaracion.new(s.id, s.ultima_posicion)
 			else
-				add(s)
+				@tabla[s.id] = s 
 			end
 		end
 	end
-	def add (simbolo)
-		simbolo.eval(@tabla)
-		@tabla[simbolo.id] = simbolo 
+
+	def eval
+		# Evalua cada declaración
+		# En ruby los Hash guardan los valores en el orden que fueron insertados
+		@tabla.each do |id,s|
+			s.eval(self) # Falta chequear que pasa si hacemos a <- a + a
+		end
 	end
+
 	def get (id)
 		e = self
 		while e != nil
-			if e.tabla.has_key?(id)
+			binding.pry
+			if e.tabla.has_key?(id) and (e.tabla[id].valor == nil or e.tabla[id].valor.class.superclass != ArbolBinario)
 				return e.tabla[id]
 			end
 			e = e.padre
 		end
 		return nil
 	end
-	def update(lvalue, arbol_expr, posicion)
+	def update(lvalue, arbol_expr)
 		simbolo = get(lvalue)
 		if simbolo != nil
 			rvalue = arbol_expr.eval(simbolo.tipo,self)['valor']
 			simbolo.valor = rvalue
 		else
-			raise ErrorVariableNoDeclarada.new(id, posicion)
+			raise ErrorVariableNoDeclarada.new(id, arbol_expr.posicion)
 		end
-	end
-	def to_s(nivel=0)
-		tabs = ("\t" * nivel)
-		str = tabs + "TABLA DE SIMBOLOS\n"
-		@tabla.each do |id,simbolo|
-			str += simbolo.to_s(nivel+1) + "\n"
-		end
-		@hijos.each do |tabla_h|
-			str += "\n" + tabla_h.to_s(nivel+1)
-		end
-		str
 	end
 end
 
@@ -76,7 +70,7 @@ class Simbolo
 		@tipo.eval(tabla)
 		@valor = @valor.eval(@tipo,tabla)['valor'] if @valor != nil
 	end
-	def to_s(nivel = 0)
+	def to_s(nivel=0)
 		tabs = "\t" * nivel
 		str = tabs + "Identificador: #{@id} \n\t" + tabs + "Tipo: #{@tipo.to_s}\n"
 		str += tabs + "\tValor: #{@valor}\n" unless valor == nil
@@ -137,7 +131,7 @@ class ErrorDimensiones < ErrorEstatico
 end
 
 class ErrorTipo < ErrorEstatico
-	def initialize(tipo_dado, posicion, *tipos_esperados)
+	def initialize(posicion, tipo_dado, *tipos_esperados)
 		@tipos_esperados = tipos_esperados
 		@tipo_dado = tipo_dado
 		@linea = posicion["linea"]
@@ -153,7 +147,7 @@ class ErrorTipo < ErrorEstatico
 end
 
 class ErrorRedeclaracion < ErrorEstatico
-	def initialize(id, posicion)
+	def initialize(posicion, id)
 		@id = id
 		@linea = posicion["linea"]
 		@columna = posicion["columna"]
@@ -164,7 +158,7 @@ class ErrorRedeclaracion < ErrorEstatico
 end
 
 class ErrorVariableNoDeclarada < ErrorEstatico
-	def initialize(id, posicion)
+	def initialize(posicion, id)
 		@id = id
 		@linea = posicion["linea"]
 		@columna = posicion["columna"]
@@ -175,7 +169,7 @@ class ErrorVariableNoDeclarada < ErrorEstatico
 end
 
 class ErrorModificacionVariableProtegida < ErrorEstatico
-	def initialize(id, posicion)
+	def initialize(posicion, id)
 		@id = id
 		@linea = posicion["linea"]
 		@columna = posicion["columna"]

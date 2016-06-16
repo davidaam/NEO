@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"ErrorV",
+				"ErrorModificacionVariableProtegida"
+			],
+			[
 				"Arbol",
 				"ArbolBinario"
 			]
@@ -28,10 +32,13 @@
 			}
 		},
 		{
+			"contents": "#!/usr/bin/ruby\n# encoding: utf-8\n\n# CLASES:\n# 		Object: Extencion, funcion _to_s para imprimir con identacion segun\n#				el nivel de profundidad en el programa\n# 		Array: 	Extencion, modificacion a _to_s\n# 		Arboles pertinentes para el programa creados de manera general y extenciones especificas a:\n# 			ArbolBloque\n# 			ArbolBinario\n# 			Arbol_Secuenciacion\n# 			Arbol_Rep_Det\n# 			Arbol_Expr_Aritm\n# 			Arbol_Expr_Bool\n# 			Arbol_Expr_Rel\n# 			Arbol_Expr_Unaria_Aritm\n# 			Arbol_Expr_Unaria_Bool\n# 			Arbol_Expr_Char\n# 			Arbol_Expr_Matr -------------(FALTA)\n# 			Arbol_Expr_Unaria_Matr ------(FALTA)\n# 			Arbol_Variable\n# 			Arbol_Literal_Bool\n# 			Arbol_Literal_Char\n# 			Arbol_Literal_Num\n# 			Arbol_Literal_Matr ----------(FALTA)\n\n# Defino _to_s para todos los objetos, _to_s es básicamente un to_s que toma un parámetro,\n# si la clase en cuestión no implementa _to_s, entonces simplemente se invoca to_s\nclass Object\n	def _to_s (nivel=1)\n		self.to_s\n	end\nend\n\n# Se define _to_s para arreglos como un _to_s recursivo, de forma que se imprima la representación\n# como string de cada elemento.\nclass Array\n	def _to_s (nivel=1)\n		if self.length == 0\n			return \"[]\"\n		end\n		str = \"[\\n\"\n		self.each do |elem|\n			str += (\"\\t\" * (nivel)) + \"#{elem._to_s(nivel+1)} \\n\"\n		end\n		str += (\"\\t\" * (nivel-1)) + \"]\"\n	end\nend\n\nARBOLES = {\n	'Expr_Aritm' => [\"Operador\", \"Operando izquierdo\", \"Operando derecho\"],\n	'Expr_Bool' => [\"Operador\", \"Operando izquierdo\", \"Operando derecho\"],\n	'Expr_Rel' => [\"Operador\", \"Operando izquierdo\", \"Operando derecho\"],\n	'Expr_Matr' => [\"Operador\", \"Operando izquierdo\", \"Operando derecho\"],	#Falta\n	'Expr_Unaria_Bool' => [nil,\"Operador\", \"Operando\"],\n	'Expr_Unaria_Aritm' => [nil,\"Operador\", \"Operando\"],\n	'Expr_Unaria_Matr' => [nil,\"Operador\", \"Operando\"],						#Falta\n	'Expr_Char' => [nil,\"Operador\", \"Operando\"],\n	'Indexacion' => [nil,\"Matriz\", \"Índice\"],\n	'Asignacion' => [nil,\"Contenedor\", \"Expresión\"],\n	'Condicional' => [\"Guardia\",\"Éxito\",\"Fracaso\"],\n	'Rep_Indet' => [nil,\"Guardia\",\"Instrucción\"],\n	'Variable' => [\"Identificador\",nil,nil],\n	'Literal_Bool' => [\"Valor\",nil,nil],\n	'Literal_Char' => [\"Valor\",nil,nil],\n	'Literal_Num' => [\"Valor\",nil,nil],\n	'Literal_Matr' => [\"Valor\",nil,nil],									#Falta\n	'Read' => [\"Identificador\",nil,nil],\n	'Print' => [\"Expresión\",nil,nil],\n}\n\n# Definimos una clase que representa un bloque de incorporación de alcance\nclass ArbolBloque\n	attr_reader :tabla\n	def initialize (instr, tabla)\n		@instr = instr\n		@tabla = tabla\n	end\n	def set_tabla_padre (padre)\n		@tabla.padre = padre\n		@instr.set_tabla_padre(self)\n	end\n	def tabla_to_s(nivel=0)\n		tabs = (\"\\t\" * nivel)\n		str = tabs + \"TABLA DE SIMBOLOS\\n\"\n		@tabla.tabla.each do |id,simbolo|\n			str += simbolo.to_s(nivel+1) + \"\\n\"\n		end\n		str += @instr.tabla_to_s(nivel+1)\n		str\n	end\n\n	def to_s\n		#str = \"IMPRESION\\n\"\n		str = tabla_to_s + \"\\n\"\n		#str += \"AST\\n\" + @instr.to_s\n		str\n	end\n	def eval(a=nil,b=nil)\n		@tabla.eval\n		@instr.eval(nil,@tabla)\n	end\nend\n\n# Definimos la clase arbol binario para modelar árboles de derivación que a lo más tengan dos hijos\nclass ArbolBinario\n	attr_reader :valor, :izq, :der, :posicion\n	@desc_valor = \"\"\n	@desc_izq = \"\"\n	@desc_der = \"\"\n	def initialize (token = nil, izq = nil, der = nil)\n		# Si es un token, entonces guardo como valor el valor, si no, guardo directamente lo pasado.\n		@valor = token.class.superclass == Token ? token.valor : token\n		@izq = izq\n		@der = der\n		@posicion = token.class.superclass == Token ? {\"linea\" => token.linea, \"columna\" => token.columna} : nil\n	end\n\n	# Defino to_s como un alias de _to_s\n	def to_s(nivel=1)\n		self._to_s(nivel)\n	end\n\n	# Los árboles binarios deben implementar _to_s\n	def _to_s(nivel=1) end\n\n	def set_tabla_padre(padre) end\n\n	def tabla_to_s(nivel=0)\n		\"\"\n	end		\nend\n\n# Defino el arbol de una secuenciación como un árbol general\nclass Arbol_Secuenciacion\n	def initialize (hijos = [], valor = nil)\n		@valor = valor\n		@hijos = hijos\n	end\n\n	# Defino to_s como un alias de _to_s\n	def to_s(nivel=1)\n		self._to_s(nivel)\n	end\n\n	def _to_s (nivel = 1)\n		str = \"SECUENCIACION \\n\"\n		@hijos.each do |hijo|\n			str += (\"\\t\" * nivel) + hijo._to_s(nivel+1)\n		end\n		return str\n	end\n	\n	def tabla_to_s(nivel=0)\n		str = \"\"\n		@hijos.each do |arbol|\n			if arbol.class == ArbolBloque\n				str += arbol.tabla_to_s(nivel+1)\n			end\n		end\n		str\n	end\n	def set_tabla_padre(padre)\n		@hijos.each do |arbol|\n			if arbol.class == ArbolBloque\n				arbol.set_tabla_padre(padre)\n			end\n		end\n	end\n\n	def eval(tipo, tabla)\n		@hijos.each do |instr|\n			instr.eval(nil,tabla)\n		end\n	end\nend\n\n# Definimos la clase para modelar el árbol de una repetición determinada\nclass Arbol_Rep_Det\n	def initialize (tkid, from, to, instruccion, step = Arbol_Literal_Num.new(1))\n		@from = from\n		@to = to\n		@step = step\n		@instruccion = instruccion\n		@id = tkid.valor\n	end\n	\n	# Defino to_s como un alias de _to_s\n	def to_s(nivel=1)\n		self._to_s(nivel)\n	end\n\n	def _to_s (nivel = 1)\n		tabs = (\"\\t\" * nivel)\n		str = \"REPETICION_DET\\n\"\n		str += tabs + \"Identificador: #{@id._to_s(nivel+1)}\\n\"\n		str += tabs + \"Valor inicial: #{@from._to_s(nivel+1)}\\n\"\n		str += tabs + \"Valor final: #{@to._to_s(nivel+1)}\\n\"\n		str += tabs + \"Paso: #{@step._to_s(nivel+1)}\\n\"\n		str += tabs + \"Instrucción: #{@instruccion._to_s(nivel+1)}\\n\"\n		str\n	end\n\n	def set_tabla_padre(padre) end\n\n	def tabla_to_s(nivel=0)\n		\"\"\n	end\n\n	def eval(tipo, tabla)\n		@from.eval(INT, tabla)\n		@to.eval(INT, tabla)\n		@step.eval(INT, tabla) unless @step.nil?\n		@instruccion.eval(nil, tabla)\n	end\nend\n\n# Creamos las clases de los árboles que se comportan como árboles binarios y se crea el\n# método _to_s correspondiente\nARBOLES.each do |tipo_arbol,descripcion| \n	Object.const_set(\"Arbol_#{tipo_arbol}\",\n		Class.new(ArbolBinario) do\n			def _to_s (nivel = 1)\n				tipo_arbol = self.class.to_s.sub(\"Arbol_\",\"\")\n				desc_valor = ARBOLES[tipo_arbol][0]\n				desc_izq = ARBOLES[tipo_arbol][1]\n				desc_der = ARBOLES[tipo_arbol][2]\n				str = \"#{tipo_arbol.upcase}\\n\"\n				tabs = (\"\\t\" * nivel)\n				str += tabs + \"#{desc_valor}: #{@valor._to_s(nivel+1)} \\n\" unless @valor == nil or desc_valor == nil\n				str += tabs + \"#{desc_izq}: #{@izq._to_s(nivel+1)} \\n\" unless @izq == nil or desc_izq == nil\n				str += tabs + \"#{desc_der}: #{@der._to_s(nivel+1)} \\n\" unless @der == nil or desc_der == nil\n				return str\n			end\n		end\n	)\nend\n\n# Creamos el metodo eval para cada clase\n\nclass Arbol_Expr_Aritm\n	def eval (tipo, tabla_sim)\n		if tipo and tipo != INT\n			raise ErrorTipo.new(@izq.posicion, tipo, INT)\n		end\n		op_izq = @izq.eval(INT, tabla_sim)['valor']\n		op_der = @der.eval(INT, tabla_sim)['valor']\n		case @valor\n			when '+'\n				valor = op_izq + op_der\n			when '-'\n				valor = op_izq - op_der\n			when '/'\n				valor = op_izq / op_der\n			when '*'\n				valor = op_izq * op_der\n			when '%'\n				valor = op_izq % op_der\n		end\n		return {\"tipo\" => INT, \"valor\" => valor}\n	end\nend\n\nclass Arbol_Expr_Bool\n	def eval (tipo, tabla_sim)\n		if tipo and tipo != BOOL\n			raise ErrorTipo.new(@izq.posicion,tipo,BOOL)\n		end\n		op_izq = @izq.eval(BOOL, tabla_sim)['valor']\n		op_der = @der.eval(BOOL, tabla_sim)['valor']\n		case @valor\n			when '/\\\\'\n				valor = op_izq and op_der\n			when '\\\\/'\n				valor = op_izq or op_der\n		end\n		return {\"tipo\" => BOOL, \"valor\" => valor}\n	end\nend\n\nclass Arbol_Expr_Rel\n	def eval (tipo, tabla_sim)\n		if tipo and tipo != BOOL\n			raise ErrorTipo.new(@izq.posicion,tipo,BOOL)\n		end		\n		\n		op_izq = @izq.eval(nil, tabla_sim)\n		op_der = @der.eval(op_izq['tipo'], tabla_sim)\n\n		if op_izq['tipo'] != op_der['tipo']\n			raise ErrorTipo.new(@izq.posicion,op_der.tipo,op_izq.tipo)\n		else\n			op_izq = op_izq['valor']\n			op_der = op_der['valor']\n		end\n		case @valor\n			when '<'\n				valor = op_izq < op_der\n			when '<='\n				valor = op_izq <= op_der\n			when '>'\n				valor = op_izq > op_der\n			when '>='\n				valor = op_izq >= op_der\n			when '='\n				valor = op_izq == op_der\n		end\n		return {\"tipo\" => BOOL, \"valor\" => valor}\n	end\nend\n\nclass Arbol_Expr_Unaria_Aritm\n	def eval (tipo, tabla_sim)\n		if tipo and tipo != INT\n			raise ErrorTipo.new(@posicion, tipo, INT)\n		end\n		operando = @der.eval(INT, tabla_sim)['valor']\n		# El único operador unario es -\n		return {\"tipo\" => INT, \"valor\" => (-1) * operando}\n	end\nend\n\nclass Arbol_Expr_Unaria_Bool\n	def eval (tipo, tabla_sim)\n		if tipo and tipo != BOOL\n			raise ErrorTipo.new(@posicion, tipo, BOOL)\n		end\n		operando = @der.eval(BOOL, tabla_sim)['valor']\n		# El único operador unario es not\n		return {\"tipo\" => BOOL, \"valor\" => !operando}\n	end\nend\n\nclass Arbol_Expr_Char\n	def eval (tipo, tabla_sim)\n		operador = @izq\n		tipo_retornado = CHAR\n		case operador\n			when '++'\n				if !tipo or tipo == CHAR\n					operando = @der.eval(CHAR, tabla_sim)['valor']\n					operando_ascii = operando.codepoints.first\n					return {\"tipo\" => CHAR, \"valor\" => (operando_ascii + 1).chr}\n				end\n			when '--'\n				if !tipo or tipo == CHAR\n					operando = @der.eval(CHAR, tabla_sim)['valor']\n					operando_ascii = operando.codepoints.first\n					return {\"tipo\" => CHAR, \"valor\" => (operando_ascii - 1).chr}\n				end\n			when '#'\n				tipo_retornado = INT\n				if !tipo or tipo == INT\n					operando = @der.eval(CHAR, tabla_sim)['valor']\n					return {\"tipo\" => INT, \"valor\" => operando.codepoints.first}\n				end\n		end\n		raise ErrorTipo.new(@posicion,tipo_retornado,tipo)\n	end\nend\n\n# PENDIENTE CON EL CHEQUEO DE TIPOS, Los literales se interpretan segun el contexto\nclass Arbol_Expr_Matr\n	def eval (tipo, tabla_sim)\n		# el unico operador es ::\n		if !tipo or tipo.tipo == \"matrix\"\n			op_izq = @izq.eval(tipo, tabla_sim)\n			op_der = @der.eval(tipo, tabla_sim)\n		end\n		# para concatenar Matrix.build(4,2){|row,col| row<2?  m[row,col] : a[row-2,col]}\n\n\n	end\nend\n\nclass Arbol_Expr_Unaria_Matr\n	def eval (tipo, tabla_sim)\n		operando = @der.eval(tipo, tabla_sim)\n		operador = @valor\n		case operador\n			when '$'\n			when '?'\n			when '[]'\n		end\n	end\nend\n\nclass Arbol_Variable\n	def eval (tipo, tabla_sim)\n		if (e = tabla_sim.get(@valor))\n			if (!tipo or e.tipo == tipo)\n				return {\"tipo\" => e.tipo, \"valor\" => e.valor}\n			end\n			raise ErrorTipo.new(@posicion, tipo, e.tipo)\n		end\n		raise ErrorVariableNoDeclarada.new(@posicion,@valor) \n	end\nend\n\nclass Arbol_Literal_Bool\n	def eval (tipo, tabla_sim)\n		if !tipo or tipo == BOOL\n			return {\"tipo\" => BOOL, \"valor\" => @valor}\n		end\n		puts @posicion\n		raise ErrorTipo.new(@posicion,BOOL,tipo)\n	end\nend\n\nclass Arbol_Literal_Char\n	def eval (tipo, tabla_sim)\n		if !tipo or tipo == CHAR\n			return {\"tipo\" => CHAR, \"valor\" => @valor}\n		end\n		raise ErrorTipo.new(@posicion,CHAR,tipo)\n	end\nend\n\nclass Arbol_Literal_Num\n	def eval (tipo, tabla_sim)\n		if !tipo or tipo == INT\n			return {\"tipo\" => INT, \"valor\" => Integer(@valor)}\n		end\n		raise ErrorTipo.new(@posicion,INT,tipo)\n	end\nend\n\nclass Arbol_Literal_Matr\n	def eval (tipo, tabla_sim)\n		if tipo == INT\n			return @valor\n		end\n		raise ErrorTipo.new(@posicion,tipo,INT)\n	end\nend\n\nclass Arbol_Read\n	def eval (tipo, tabla_sim)\n		pos = @valor.posicion\n		variable = @valor.valor\n		if (e = tabla_sim.get(variable))\n			if e.protegida\n				raise ErrorModificacionVariableProtegida.new(pos,variable)\n			end\n			if e.tipo.tipo != \"matrix\"\n				return {\"tipo\" => e.tipo, \"valor\" => e.valor}\n			else\n				raise ErrorTipo.new(pos,tipo,INT,BOOL,CHAR)\n			end\n		end\n	end\nend\nclass Arbol_Print\n	def eval (tipo, tabla_sim)\n		@valor.eval(nil,tabla_sim)\n	end\nend\n\nclass Arbol_Rep_Indet\n	def eval(tipo, tabla_sim)\n		@izq.eval(BOOL, tabla_sim)\n		@der.eval(nil, tabla_sim)\n	end\nend\n\nclass Arbol_Condicional\n	def eval(tipo, tabla_sim)\n		@valor.eval(BOOL, tabla_sim)\n		@izq.eval(nil,tabla_sim)\n		@der.eval(nil,tabla_sim)\n	end\nend\n\nclass Arbol_Asignacion\n	def eval(tipo, tabla_sim)\n		pos = @der.posicion # Posición del valor asignado\n		variable = @izq.valor\n		@izq.eval(tipo, tabla_sim)\n		if (e = tabla_sim.get(variable))\n			if (e.protegida)\n				raise ErrorModificacionVariableProtegida.new(pos,variable)\n			end\n			if (!tipo or e.tipo == tipo)\n				tabla_sim.update(variable,@der)\n			else\n				raise ErrorTipo.new(pos,e.tipo,tipo)\n			end\n		else\n			raise ErrorVariableNoDeclarada.new(pos,variable)\n		end\n	end\nend",
 			"file": "AST.rb",
+			"file_size": 12072,
+			"file_write_time": 131104374211346593,
 			"settings":
 			{
-				"buffer_size": 7427,
+				"buffer_size": 12047,
 				"line_ending": "Unix"
 			}
 		},
@@ -39,15 +46,7 @@
 			"file": "SymTable.rb",
 			"settings":
 			{
-				"buffer_size": 2434,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "gramatica.y",
-			"settings":
-			{
-				"buffer_size": 8344,
+				"buffer_size": 4458,
 				"line_ending": "Unix"
 			}
 		},
@@ -55,12 +54,23 @@
 			"file": "Pruebas/unarias",
 			"settings":
 			{
-				"buffer_size": 157,
+				"buffer_size": 223,
 				"line_ending": "Unix"
 			}
 		},
 		{
+			"file": "gramatica.y",
+			"settings":
+			{
+				"buffer_size": 8652,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "with\n	var bar : matrix [2,2] of int\nbegin\n	bar <- ($(a::b::c::{}))[3,3,4][2].\nend",
 			"file": "Pruebas/indexacion.txt",
+			"file_size": 81,
+			"file_write_time": 131101455588618700,
 			"settings":
 			{
 				"buffer_size": 81,
@@ -170,6 +180,47 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"ArbolBl",
+			"get",
+			".get",
+			"arbolBloque",
+			"ArbolBinario",
+			"hijos",
+			"tabla_to_s",
+			"binding",
+			"arbolbloq",
+			"arbolbloque",
+			"binding.",
+			"ultima_posici",
+			"puts",
+			"tipo != nil",
+			"Arbol_Variable",
+			"HEYY",
+			"\n		",
+			"throw",
+			"ErrorTipo\\.new\\(([a-z\\._]+),([a-z\\._]+)\\)",
+			"Arbol_variable",
+			".add",
+			"!tipo",
+			"tipo == ([A-Z]+) or !tipo",
+			"tipo == ([A-Z])+ or !tipo",
+			"!tipo",
+			"tipo == nil",
+			"\n		",
+			"Asignacion",
+			"variablenodeclarada",
+			"ArbolBloque",
+			".valor",
+			"INT",
+			"Simbolo",
+			"ArbolBloq",
+			"'bool'",
+			"'char'",
+			"'int'",
+			"new ",
+			".tipo",
+			"tipo.new",
+			"tipo.eval",
 			"Simbolo",
 			"<<",
 			"valores",
@@ -256,16 +307,7 @@
 			"valor",
 			"valor = nil",
 			"nil",
-			"$",
-			"'([^\\s']+)' '([^\\s']+)'",
-			"expresion_aritm",
-			"nil",
-			"Arbol_If",
-			"puts",
-			"condicional",
-			"(Tk[^\\s]+)",
-			"expresion_",
-			"valores"
+			"$"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -273,6 +315,12 @@
 		"regex": false,
 		"replace_history":
 		[
+			"raise",
+			"ErrorTipo.new($2,$1)",
+			"ErrorTipo.new(",
+			"ErrorTipo.new($2,$1)",
+			"!tipo or tipo == $1",
+			"!tipo",
 			"._to_s",
 			".to_strr",
 			"to_strr",
@@ -348,7 +396,7 @@
 	"groups":
 	[
 		{
-			"selected": 4,
+			"selected": 2,
 			"sheets":
 			[
 				{
@@ -417,15 +465,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 7427,
+						"buffer_size": 12047,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								5216,
-								5216
+								9958,
+								9958
 							]
 						],
 						"settings":
@@ -434,10 +482,10 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 2865.0,
+						"translation.y": 5556.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
@@ -446,43 +494,44 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2434,
+						"buffer_size": 4458,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								856,
-								856
+								665,
+								665
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Ruby/Ruby.sublime-syntax"
+							"syntax": "Packages/Ruby/Ruby.sublime-syntax",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 447.0,
+						"translation.y": 381.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
 					"buffer": 4,
-					"file": "gramatica.y",
+					"file": "Pruebas/unarias",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8344,
+						"buffer_size": 223,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1820,
-								1820
+								219,
+								219
 							]
 						],
 						"settings":
@@ -491,35 +540,36 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 1117.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
 					"buffer": 5,
-					"file": "Pruebas/unarias",
+					"file": "gramatica.y",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 157,
+						"buffer_size": 8652,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								125,
-								125
+								8467,
+								8467
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Text/Plain text.tmLanguage"
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 3784.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 3,
@@ -682,7 +732,7 @@
 	"project": "lexer.sublime-project",
 	"replace":
 	{
-		"height": 42.0
+		"height": 64.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -696,12 +746,16 @@
 	},
 	"select_project":
 	{
-		"height": 0.0,
+		"height": 500.0,
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"",
+				"/media/david/Windows1/Users/David Atias/RubymineProjects/Lexer/Pruebas/prolog.sublime-project"
+			]
 		],
-		"width": 0.0
+		"width": 380.0
 	},
 	"select_symbol":
 	{

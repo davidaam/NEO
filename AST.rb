@@ -71,6 +71,7 @@ ARBOLES = {
 
 # Definimos una clase que representa un bloque de incorporación de alcance
 class ArbolBloque
+	attr_reader :tabla
 	def initialize (instr, tabla)
 		@instr = instr
 		@tabla = tabla
@@ -78,36 +79,38 @@ class ArbolBloque
 	def set_tabla_padre (padre)
 		@tabla.padre = padre
 		@instr.set_tabla_padre(self)
-		
-		#QUE QUERIAS HACER CON ESTO????
-		#padre.hijos << @tabla
 	end
+	def tabla_to_s(nivel=0)
+		tabs = ("\t" * nivel)
+		str = tabs + "TABLA DE SIMBOLOS\n"
+		@tabla.tabla.each do |id,simbolo|
+			str += simbolo.to_s(nivel+1) + "\n"
+		end
+		str += @instr.tabla_to_s(nivel+1)
+		str
+	end
+
 	def to_s
 		#str = "IMPRESION\n"
-		str = @tabla.to_s + "\n"
+		str = tabla_to_s + "\n"
 		#str += "AST\n" + @instr.to_s
 		str
 	end
 	def eval(a=nil,b=nil)
+		@tabla.eval
 		@instr.eval(nil,@tabla)
 	end
 end
 
 # Definimos la clase arbol binario para modelar árboles de derivación que a lo más tengan dos hijos
 class ArbolBinario
-	attr_reader :valor, :izq, :der
+	attr_reader :valor, :izq, :der, :posicion
 	@desc_valor = ""
 	@desc_izq = ""
 	@desc_der = ""
 	def initialize (token = nil, izq = nil, der = nil)
 		# Si es un token, entonces guardo como valor el valor, si no, guardo directamente lo pasado.
 		@valor = token.class.superclass == Token ? token.valor : token
-		if token.class.superclass != Token 
-			puts token
-			puts token.class.superclass
-			puts token.class
-			puts '==========='
-		end
 		@izq = izq
 		@der = der
 		@posicion = token.class.superclass == Token ? {"linea" => token.linea, "columna" => token.columna} : nil
@@ -122,7 +125,10 @@ class ArbolBinario
 	def _to_s(nivel=1) end
 
 	def set_tabla_padre(padre) end
-		
+
+	def tabla_to_s(nivel=0)
+		""
+	end		
 end
 
 # Defino el arbol de una secuenciación como un árbol general
@@ -145,6 +151,15 @@ class Arbol_Secuenciacion
 		return str
 	end
 	
+	def tabla_to_s(nivel=0)
+		str = ""
+		@hijos.each do |arbol|
+			if arbol.class == ArbolBloque
+				str += arbol.tabla_to_s(nivel+1)
+			end
+		end
+		str
+	end
 	def set_tabla_padre(padre)
 		@hijos.each do |arbol|
 			if arbol.class == ArbolBloque
@@ -188,6 +203,10 @@ class Arbol_Rep_Det
 
 	def set_tabla_padre(padre) end
 
+	def tabla_to_s(nivel=0)
+		""
+	end
+
 	def eval(tipo, tabla)
 		@from.eval(INT, tabla)
 		@to.eval(INT, tabla)
@@ -222,7 +241,7 @@ end
 class Arbol_Expr_Aritm
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != INT
-			raise ErrorTipo.new(tipo, @posicion,INT)
+			raise ErrorTipo.new(@izq.posicion, tipo, INT)
 		end
 		op_izq = @izq.eval(INT, tabla_sim)['valor']
 		op_der = @der.eval(INT, tabla_sim)['valor']
@@ -245,7 +264,7 @@ end
 class Arbol_Expr_Bool
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != BOOL
-			raise ErrorTipo.new(tipo,@posicion,BOOL)
+			raise ErrorTipo.new(@izq.posicion,tipo,BOOL)
 		end
 		op_izq = @izq.eval(BOOL, tabla_sim)['valor']
 		op_der = @der.eval(BOOL, tabla_sim)['valor']
@@ -262,12 +281,14 @@ end
 class Arbol_Expr_Rel
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != BOOL
-			raise ErrorTipo.new(tipo,@posicion,BOOL)
+			raise ErrorTipo.new(@izq.posicion,tipo,BOOL)
 		end		
-		op_izq = @izq.eval(tipo, tabla_sim)
-		op_der = @der.eval(op_izq.tipo, tabla_sim)
-		if op_izq.tipo == op_der.tipo
-			raise ErrorTipo.new(op_der.tipo,@posicion,op_izq.tipo)
+		
+		op_izq = @izq.eval(nil, tabla_sim)
+		op_der = @der.eval(op_izq['tipo'], tabla_sim)
+
+		if op_izq['tipo'] != op_der['tipo']
+			raise ErrorTipo.new(@izq.posicion,op_der.tipo,op_izq.tipo)
 		else
 			op_izq = op_izq['valor']
 			op_der = op_der['valor']
@@ -291,7 +312,7 @@ end
 class Arbol_Expr_Unaria_Aritm
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != INT
-			raise ErrorTipo.new(tipo, @posicion,INT)
+			raise ErrorTipo.new(@posicion, tipo, INT)
 		end
 		operando = @der.eval(INT, tabla_sim)['valor']
 		# El único operador unario es -
@@ -302,7 +323,7 @@ end
 class Arbol_Expr_Unaria_Bool
 	def eval (tipo, tabla_sim)
 		if tipo and tipo != BOOL
-			raise ErrorTipo.new(tipo, @posicion,BOOL)
+			raise ErrorTipo.new(@posicion, tipo, BOOL)
 		end
 		operando = @der.eval(BOOL, tabla_sim)['valor']
 		# El único operador unario es not
@@ -334,7 +355,7 @@ class Arbol_Expr_Char
 					return {"tipo" => INT, "valor" => operando.codepoints.first}
 				end
 		end
-		raise ErrorTipo.new(tipo_retornado,@posicion,tipo)
+		raise ErrorTipo.new(@posicion,tipo_retornado,tipo)
 	end
 end
 
@@ -370,9 +391,9 @@ class Arbol_Variable
 			if (!tipo or e.tipo == tipo)
 				return {"tipo" => e.tipo, "valor" => e.valor}
 			end
-			raise ErrorTipo.new(tipo,@posicion, e.tipo)
+			raise ErrorTipo.new(@posicion, tipo, e.tipo)
 		end
-		raise ErrorVariableNoDeclarada.new(@valor,@posicion) 
+		raise ErrorVariableNoDeclarada.new(@posicion,@valor) 
 	end
 end
 
@@ -382,7 +403,7 @@ class Arbol_Literal_Bool
 			return {"tipo" => BOOL, "valor" => @valor}
 		end
 		puts @posicion
-		raise ErrorTipo.new(BOOL, @posicion,tipo)
+		raise ErrorTipo.new(@posicion,BOOL,tipo)
 	end
 end
 
@@ -391,7 +412,7 @@ class Arbol_Literal_Char
 		if !tipo or tipo == CHAR
 			return {"tipo" => CHAR, "valor" => @valor}
 		end
-		raise ErrorTipo.new(CHAR, @posicion,tipo)
+		raise ErrorTipo.new(@posicion,CHAR,tipo)
 	end
 end
 
@@ -400,30 +421,31 @@ class Arbol_Literal_Num
 		if !tipo or tipo == INT
 			return {"tipo" => INT, "valor" => Integer(@valor)}
 		end
-		raise ErrorTipo.new(INT, @posicion,tipo)
+		raise ErrorTipo.new(@posicion,INT,tipo)
 	end
 end
 
 class Arbol_Literal_Matr
 	def eval (tipo, tabla_sim)
-		if tipo == 'int'
+		if tipo == INT
 			return @valor
 		end
-		raise ErrorTipo.new(tipo, @posicion,'int')
+		raise ErrorTipo.new(@posicion,tipo,INT)
 	end
 end
 
 class Arbol_Read
 	def eval (tipo, tabla_sim)
+		pos = @valor.posicion
 		variable = @valor.valor
 		if (e = tabla_sim.get(variable))
 			if e.protegida
-				raise ErrorModificacionVariableProtegida.new(variable, @posicion)
+				raise ErrorModificacionVariableProtegida.new(pos,variable)
 			end
 			if e.tipo.tipo != "matrix"
 				return {"tipo" => e.tipo, "valor" => e.valor}
 			else
-				raise ErrorTipo.new(tipo, @posicion,INT,BOOL,CHAR)
+				raise ErrorTipo.new(pos,tipo,INT,BOOL,CHAR)
 			end
 		end
 	end
@@ -451,19 +473,20 @@ end
 
 class Arbol_Asignacion
 	def eval(tipo, tabla_sim)
+		pos = @der.posicion # Posición del valor asignado
 		variable = @izq.valor
 		@izq.eval(tipo, tabla_sim)
 		if (e = tabla_sim.get(variable))
 			if (e.protegida)
-				raise ErrorModificacionVariableProtegida.new(variable, @posicion)
+				raise ErrorModificacionVariableProtegida.new(pos,variable)
 			end
 			if (!tipo or e.tipo == tipo)
-				tabla_sim.update(variable,@der,@posicion)
+				tabla_sim.update(variable,@der)
 			else
-				raise ErrorTipo.new(e.tipo, @posicion,tipo)
+				raise ErrorTipo.new(pos,e.tipo,tipo)
 			end
 		else
-			raise ErrorVariableNoDeclarada.new(variable, @posicion)
+			raise ErrorVariableNoDeclarada.new(pos,variable)
 		end
 	end
 end

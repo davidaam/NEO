@@ -708,7 +708,7 @@ module_eval(<<'.,.,', 'gramatica.y', 84)
 
 module_eval(<<'.,.,', 'gramatica.y', 88)
   def _reduce_2(val, _values, result)
-    result = ArbolBloque.new(val[1],nil)
+    result = ArbolBloque.new(val[1],TablaSimbolos.new([]))
     result
   end
 .,.,

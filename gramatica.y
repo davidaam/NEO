@@ -86,7 +86,7 @@ class Parser
 				  val[3].set_tabla_padre(tabla)
 				  result = ArbolBloque.new(val[3],tabla)
 				}
-			  | 'begin' instruccion 'end' {result = ArbolBloque.new(val[1],nil)}
+			  | 'begin' instruccion 'end' {result = ArbolBloque.new(val[1],TablaSimbolos.new([]))}
 
 		# Restringimos en la gramática que la especificación de las dimensiones de las matrices
 		# se hace estrictamente con literales numéricos
@@ -95,16 +95,21 @@ class Parser
 			| 'int' {result = INT }
 			| 'matrix' '[' expresiones ']' 'of' tipo { result = Tipo.new('matrix',val[2],val[5]) }	
 
-		declaracion: 'var' declarables ':' tipo { result = val[1].map {|s| s.set_type(val[3])} }
+		declaracion: 'var' declarables ':' tipo { result = val[1].map {|l| l[0].set_type(val[3])} }
 
 		declaraciones: declaraciones declaracion {result = val[0] + val[1] }
 					 | declaracion {result = val[0] }
 
-		declarable: 'id' '<-' expresion {result = Simbolo.new(val[0],nil,val[2]) }
-				  | 'id' {result = Simbolo.new(val[0]) }
+		declarable: 'id' '<-' expresion {
+			simbolo = Simbolo.new(val[0],nil)
+			variable = Arbol_Variable.new(val[0])
+			asignacion = Arbol_Asignacion.new(nil,variable,val[2])
+			result = [simbolo, asignacion]
+		}
+				  | 'id' {result = [Simbolo.new(val[0]),nil] }
 
 		declarables: declarables ',' declarable { result = val[0] << val[2] }
-				   | declarable { result = [val[0]] }
+				   | declarable { result = val[0] }
 
 		valor: contenedor {result = val[0]}
 			 | literal {result = val[0]}

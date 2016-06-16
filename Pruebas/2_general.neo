@@ -1,7 +1,7 @@
 with
 	var n <- 5 : int
 begin 
-	if false / cangrejo -> 
+    if n > cangrejo -> 
 			f <- not perro. 
 		otherwise -> print  2%j.
 	end

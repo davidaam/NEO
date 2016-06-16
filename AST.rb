@@ -100,6 +100,10 @@ class ArbolBloque
 	end
 	def eval(a=nil,b=nil)
 		@tabla.eval
+		asignaciones = @tabla.asignaciones
+		asignaciones.each do |asig|
+			asig.eval(nil,@tabla)
+		end
 		@instr.eval(nil,@tabla)
 	end
 end
@@ -164,7 +168,8 @@ class Arbol_Secuenciacion
 	end
 	def set_tabla_padre(padre)
 		@hijos.each do |arbol|
-			if arbol.class == ArbolBloque
+			if arbol.class == ArbolBloque or arbol.class == Arbol_Secuenciacion
+				binding.pry
 				arbol.set_tabla_padre(padre)
 			end
 		end
@@ -477,15 +482,15 @@ class Arbol_Asignacion
 	def eval(tipo, tabla_sim)
 		pos = @der.posicion # Posición del valor asignado
 		variable = @izq.valor
-		@izq.eval(tipo, tabla_sim)
+		tipo_valor = @izq.eval(tipo, tabla_sim)['tipo']
 		if (e = tabla_sim.get(variable))
 			if (e.protegida)
 				raise ErrorModificacionVariableProtegida.new(pos,variable)
 			end
-			if (!tipo or e.tipo == tipo)
+			if (!tipo and e.tipo == tipo_valor)
 				tabla_sim.update(variable,@der)
 			else
-				raise ErrorTipo.new(pos,e.tipo,tipo)
+				raise ErrorTipo.new(pos,e.tipo,tipo_valor)
 			end
 		else
 			raise ErrorVariableNoDeclarada.new(pos,variable)

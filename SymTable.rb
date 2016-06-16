@@ -8,16 +8,23 @@
 # 		ErrorDimensiones
 
 class TablaSimbolos
-	attr_reader :tabla
+	attr_reader :tabla, :asignaciones
 	attr_accessor :padre
-	def initialize (lista_sim, padre = nil)
+	def initialize (lista_sim_asig, padre = nil)
 		@padre = padre
 		@tabla = {}
-		lista_sim.each do |s|
-			if @tabla.has_key?(s.id)
-				raise ErrorRedeclaracion.new(s.id, s.ultima_posicion)
+		@asignaciones = []
+		lista_sim_asig.each do |tupla|
+			binding.pry
+			simbolo = tupla[0]
+			asignacion = tupla[1]
+			if @tabla.has_key?(simbolo.id)
+				raise ErrorRedeclaracion.new(simbolo.id, simbolo.ultima_posicion)
 			else
-				@tabla[s.id] = s 
+				@tabla[simbolo.id] = simbolo 
+			end
+			if asignacion != nil
+				@asignaciones << asignacion
 			end
 		end
 	end

@@ -15,7 +15,6 @@ class TablaSimbolos
 		@tabla = {}
 		@asignaciones = []
 		lista_sim_asig.each do |tupla|
-			
 			simbolo = tupla[0]
 			asignacion = tupla[1]
 			if @tabla.has_key?(simbolo.id)
@@ -67,17 +66,17 @@ end
 
 class Tipo
 	attr_reader :tipo, :dimensiones, :tipo_param, :forma, :dimensionalidad
-	def initialize(tipo,dimensiones=nil,tipo_param=nil)
+	def initialize(tipo,dimensiones=[],tipo_param=nil,dimensionalidad=0)
 		@tipo = tipo
 		@dimensiones = dimensiones
 		@tipo_param = tipo_param
+		@forma = []
+		@dimensionalidad = dimensionalidad
 		aplanar() # Aplano la definición recursiva del tipo
-		@forma = @dimensiones ? @dimensiones.map { |d| d.length } : []
-		@dimensionalidad = @forma ? @forma.reduce(0, :+) : 0
 	end
 	
 	def aplanar
-		if @tipo == "matrix"
+		if @tipo == "matrix" and !@dimensiones.empty?
 			e = self
 			dimensiones = [@dimensiones]
 			while !(e = e.tipo_param).tipo_param.nil?
@@ -85,21 +84,27 @@ class Tipo
 			end
 			@tipo_param = e
 			@dimensiones = dimensiones
+			@forma = @dimensiones.map { |d| d.length }
+			@dimensionalidad = @forma.reduce(0, :+)
 		end
 	end
 
 	def ==(x)
 		eq = @tipo == x.tipo
 		if eq and @tipo == "matrix"
-			if @forma != x.forma
+			# Tipo matrix y forma [] representa una matriz sin forma definida (literal matriz, forma ambigua)
+			if !x.forma.empty? and !@forma.empty? and @forma != x.forma
 				eq = false # Error de forma
+			end
+			if @dimensiones != x.dimensiones
+				eq = false
 			end
 		end
 		eq
 	end
 	def to_s
 		str = @tipo
-		str += " " + @dimensiones._to_s if @dimensiones
+		str += " " + @dimensiones._to_s if !@dimensiones.empty?
 		str += " of " + @tipo_param.to_s if @tipo_param
 		str
 	end
@@ -111,15 +116,16 @@ class ErrorEstatico < RuntimeError
 end
 
 class ErrorDimensiones < ErrorEstatico
-	def initialize(dim1,dim2)
+	def initialize(posicion,dim1,dim2)
+		@linea = posicion['linea']
+		@columna = posicion['columna']
 		@dim1 = dim1
 		@dim2 = dim2
 		#@linea = posicion["linea"]
 		#@columna = posicion["columna"]
 	end
 	def to_s
-		#"En la linea: #{@linea} y columna: #{@columna}, Las dimensiones no cuadran: #{@dim1} != #{@dim2}"
-		"Las dimensiones no cuadran: #{@dim1} != #{@dim2}"
+		"En la linea: #{@linea} y columna: #{@columna}, Las dimensiones no cuadran: #{@dim1} != #{@dim2}"
 	end
 end
 

@@ -4,4 +4,21 @@ with
 	var z: char
 begin
 	x <- -3.
+	y <- y :: {{#'f'},{#z},{2},{1,2}}.
+	y[2] <- {1,2,3}
+	print y.
+	
+	with 
+		var i: int
+		var m: matrix [2,i] of char
+	begin
+		for i from 0 to 2 ->
+			for j from 0 to n ->
+				print m[i,j].
+				print #m[i,j].
+				print m[i][j].
+				print m[i,j][j].
+			end
+		end
+	end
 end

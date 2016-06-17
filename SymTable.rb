@@ -64,6 +64,16 @@ class Simbolo
 	end
 end
 
+# Esta clase representa a todos los tipos, de los cuales BOOL, CHAR e INT estan instanciados
+# Sin embargo los diferentes tipos matrix se van creando a medida se solicitan en el programa
+# Por lo tanto, dimensiones, tipo_param, forma y dimencionalidad son atributos para manipular
+# mejor las matrices
+# @dimensiones: representa
+# @tipo_param: es el tipo final, distinto de matriz que tiene al final de la posible recursion
+# @forma: Representa la forma de indexacion de la matriz. Es decir matrix [2] of matrix [3] of
+#  		int === [1,1]
+# @dimencionalidad: Representa la cantidad general de dimensiones de manera que se facilite
+# 					la interpretacion, operacion y comparacion de literales_matriciales.
 class Tipo
 	attr_reader :tipo, :dimensiones, :tipo_param, :forma, :dimensionalidad
 	def initialize(tipo,dimensiones=[],tipo_param=nil,dimensionalidad=0)
@@ -96,7 +106,11 @@ class Tipo
 			if !x.forma.empty? and !@forma.empty? and @forma != x.forma
 				eq = false # Error de forma
 			end
-			if @dimensiones != x.dimensiones
+			# En el caso de los literales:
+			if @dimensionalidad != x.dimensionalidad
+				eq = false
+			end
+			if @tipo_param != x.tipo_param
 				eq = false
 			end
 		end

@@ -354,13 +354,19 @@ end
 class Arbol_Variable
 	# @valor lleva el identificador
 	def eval (tipo, tabla_sim)
+		e = buscar(tabla_sim)
+		if (!tipo or e.tipo == tipo)
+			return e.tipo
+		end
+		raise ErrorTipo.new(@posicion, tipo, e.tipo)
+	end
+	def buscar (tabla_sim)
 		if (e = tabla_sim.get(@valor))
 			if (!tipo or e.tipo == tipo)
-				return e.tipo
+				return e
 			end
-			raise ErrorTipo.new(@posicion, tipo, e.tipo)
 		end
-		raise ErrorVariableNoDeclarada.new(@posicion,@valor) 
+		raise ErrorVariableNoDeclarada.new(@posicion,@valor)
 	end
 end
 
@@ -392,12 +398,14 @@ class Arbol_Literal_Num
 end
 
 class Arbol_Literal_Matr
-	def eval (tipo, tabla_sim)
+	def eval (tipo_param, tabla_sim)
 		tipo_ant = nil
-		dim = 1
 		@valor.each do |elem|
 			# Chequear que los tipos de los valores sean iguales
 			tipo_elem = elem.eval(tipo_base,nil)
+			if tipo_elem.tipo_param != tipo_param
+				raise ErrorTipo.new(@posicion, tipo_elem.tipo_param, tipo_param)
+			end
 			if tipo_ant
 				if tipo_elem.dimensionalidad != tipo_ant.dimensionalidad
 					raise ErrorDimensiones.new(@pos,tipo_elem.dimensionalidad,tipo_ant.dimensionalidad)
@@ -408,7 +416,7 @@ class Arbol_Literal_Matr
 			end
 			tipo_ant = tipo_elem
 		end
-		return Tipo.new("matrix",[],tipo_ant.tipo_param,tipo_ant.dimensionalidad)
+		return Tipo.new("matrix",[],tipo_ant.tipo_param,1+tipo_ant.dimensionalidad)
 	end
 end
 
@@ -452,17 +460,14 @@ end
 class Arbol_Asignacion
 	def eval(tipo, tabla_sim)
 		pos = @der.posicion # Posición del valor asignado
-		variable = @izq.valor
-		@izq.eval(tipo, tabla_sim)
-		if (e = tabla_sim.get(variable))
-			if (e.protegida)
-				raise ErrorModificacionVariableProtegida.new(pos,variable)
-			end
-			if tipo and e.tipo != tipo
-				raise ErrorTipo.new(pos,e.tipo,tipo)
-			end
-		else
-			raise ErrorVariableNoDeclarada.new(pos,variable)
+		identificador = @izq.valor
+		tipo_var = @izq.eval(nil, tabla_sim)
+		sim_var = @izq.buscar(tabla_sim)
+		if (sim_var.protegida)
+			raise ErrorModificacionVariableProtegida.new(pos,identificador)
 		end
+		rval_tipo = @der.eval(tipo_var,tabla_sim)
+		# Si pasa todo esto, cambiamos el tipo del literal (dimensiones y forma)
+		rval_tipo = tipo_var
 	end
 end

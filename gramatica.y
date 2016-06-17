@@ -281,7 +281,6 @@ if l.errores.empty?
 	begin
 		p = Parser.new(l.tokens)
 		x = p.parse
-		x.eval
 		puts x
 	rescue ErrorSintactico => e
 		puts "Error sintactico: #{e}"

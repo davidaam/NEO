@@ -93,9 +93,9 @@ class ArbolBloque
 	end
 
 	def to_s
-		#str = "IMPRESION\n"
-		str = tabla_to_s + "\n"
-		#str += "AST\n" + @instr.to_s
+		str = "IMPRESION\n"
+		#tr = tabla_to_s + "\n"
+		str += "AST\n" + @instr.to_s
 		str
 	end
 	def eval(a=nil,b=nil)

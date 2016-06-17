@@ -1,0 +1,5 @@
+with
+	var N : matrix [2,2] of int
+begin
+	N <- {{2,3},{2,3}}.
+end

@@ -66,41 +66,40 @@ class Simbolo
 end
 
 class Tipo
-	attr_reader :tipo, :dimensiones, :tipo_param
+	attr_reader :tipo, :dimensiones, :tipo_param, :forma, :dimensionalidad
 	def initialize(tipo,dimensiones=nil,tipo_param=nil)
 		@tipo = tipo
 		@dimensiones = dimensiones
 		@tipo_param = tipo_param
+		aplanar() # Aplano la definición recursiva del tipo
+		@forma = @dimensiones ? @dimensiones.map { |d| d.length } : []
+		@dimensionalidad = @forma ? @forma.reduce(0, :+) : 0
 	end
 	
 	def aplanar
-		e = self
-		dimensiones = [@dimensiones]
-		while (e = e.tipo_param) == "matrix"
-			dimensiones << e.dimensiones
+		if @tipo == "matrix"
+			e = self
+			dimensiones = [@dimensiones]
+			while !(e = e.tipo_param).tipo_param.nil?
+				dimensiones << e.dimensiones
+			end
+			@tipo_param = e
+			@dimensiones = dimensiones
 		end
-		@tipo = e.tipo
-		@dimensiones = dimensiones
 	end
 
 	def ==(x)
 		eq = @tipo == x.tipo
-		# Si los dos son distintos de nil
-		if @dimensiones and x.dimensiones
-			if @dimensiones.length == x.dimensiones.length
-				for i in 0...@dimensiones.length
-					eq = eq and x.dimensiones[i] == @dimensiones[i]
-				end
+		if eq and @tipo == "matrix"
+			if @forma != x.forma
+				eq = false # Error de forma
 			end
-		# Si al menos uno es distinto de nil
-		elsif @dimensiones != x.dimensiones
-			raise ErrorDimensiones.new(@dimensiones,x.dimensiones)
 		end
 		eq
 	end
 	def to_s
 		str = @tipo
-		str += " " + @dimensiones if @dimensiones
+		str += " " + @dimensiones._to_s if @dimensiones
 		str += " of " + @tipo_param.to_s if @tipo_param
 		str
 	end

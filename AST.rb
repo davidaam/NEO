@@ -83,13 +83,17 @@ class ArbolBloque
 		@instr.set_tabla_padre(self)
 	end
 	def tabla_to_s(nivel=0)
-		tabs = ("\t" * nivel)
-		str = tabs + "TABLA DE SIMBOLOS\n"
-		@tabla.tabla.each do |id,simbolo|
-			str += simbolo.to_s(nivel+1) + "\n"
+		if @tabla.tabla.length > 0
+			tabs = ("\t" * nivel)
+			str = tabs + "TABLA DE SIMBOLOS\n"
+			@tabla.tabla.each do |id,simbolo|
+				str += simbolo.to_s(nivel+1) + "\n"
+			end
+			str += @instr.tabla_to_s(nivel+1)
+			str
+		else
+			""
 		end
-		str += @instr.tabla_to_s(nivel+1)
-		str
 	end
 
 	def to_s
@@ -385,8 +389,10 @@ class Arbol_Literal_Num
 end
 
 class Arbol_Literal_Matr
-	def matchTipo (tipo)
-		# Le pasamos un tipo y chequeamos que cuadren las dimensiones con las dimensiones de la lista
+	def forma
+		@valor.each do |elem|
+
+		end
 	end
 	def eval (tipo, tabla_sim)
 		if matchTipo(tipo)

@@ -99,7 +99,7 @@ class ArbolBloque
 		str
 	end
 	def eval(a=nil,b=nil)
-		@tabla.eval
+		#@tabla.eval
 		@instr.eval(nil,@tabla)
 	end
 end
@@ -245,21 +245,10 @@ class Arbol_Expr_Aritm
 		if tipo and tipo != INT
 			raise ErrorTipo.new(@izq.posicion, tipo, INT)
 		end
-		op_izq = @izq.eval(INT, tabla_sim)['valor']
-		op_der = @der.eval(INT, tabla_sim)['valor']
-		case @valor
-			when '+'
-				valor = op_izq + op_der
-			when '-'
-				valor = op_izq - op_der
-			when '/'
-				valor = op_izq / op_der
-			when '*'
-				valor = op_izq * op_der
-			when '%'
-				valor = op_izq % op_der
-		end
-		return {"tipo" => INT, "valor" => valor}
+		@izq.eval(INT, tabla_sim)
+		@der.eval(INT, tabla_sim)
+
+		return INT
 	end
 end
 
@@ -268,15 +257,9 @@ class Arbol_Expr_Bool
 		if tipo and tipo != BOOL
 			raise ErrorTipo.new(@izq.posicion,tipo,BOOL)
 		end
-		op_izq = @izq.eval(BOOL, tabla_sim)['valor']
-		op_der = @der.eval(BOOL, tabla_sim)['valor']
-		case @valor
-			when '/\\'
-				valor = op_izq and op_der
-			when '\\/'
-				valor = op_izq or op_der
-		end
-		return {"tipo" => BOOL, "valor" => valor}
+		@izq.eval(BOOL, tabla_sim)
+		@der.eval(BOOL, tabla_sim)
+		return BOOL
 	end
 end
 
@@ -286,29 +269,17 @@ class Arbol_Expr_Rel
 			raise ErrorTipo.new(@izq.posicion,tipo,BOOL)
 		end		
 		
-		op_izq = @izq.eval(nil, tabla_sim)
-		op_der = @der.eval(op_izq['tipo'], tabla_sim)
+		tipo_op_izq = @izq.eval(nil, tabla_sim)
+		tipo_op_der = @der.eval(tipo_op_der, tabla_sim)
 
-		if op_izq['tipo'] != op_der['tipo']
-			raise ErrorTipo.new(@izq.posicion,op_der.tipo,op_izq.tipo)
-		else
-			op_izq = op_izq['valor']
-			op_der = op_der['valor']
+		if tipo_op_der != tipo_op_izq
+			raise ErrorTipo.new(@izq.posicion,tipo_op_der,tipo_op_izq)
 		end
-		case @valor
-			when '<'
-				valor = op_izq < op_der
-			when '<='
-				valor = op_izq <= op_der
-			when '>'
-				binding.pry
-				valor = op_izq > op_der
-			when '>='
-				valor = op_izq >= op_der
-			when '='
-				valor = op_izq == op_der
+		# Si estamos comparando matrices con un operador que no sea ni "=" ni "!=", error.
+		if tipo_op_izq.tipo == "matrix" and @valor != "=" and @valor != "!="
+			raise ErrorTipo.new(@izq.posicion,tipo_op_izq,INT,BOOL,CHAR)
 		end
-		return {"tipo" => BOOL, "valor" => valor}
+		return BOOL
 	end
 end
 
@@ -317,9 +288,9 @@ class Arbol_Expr_Unaria_Aritm
 		if tipo and tipo != INT
 			raise ErrorTipo.new(@posicion, tipo, INT)
 		end
-		operando = @der.eval(INT, tabla_sim)['valor']
+		@der.eval(INT, tabla_sim)
 		# El único operador unario es -
-		return {"tipo" => INT, "valor" => (-1) * operando}
+		return INT
 	end
 end
 
@@ -328,37 +299,22 @@ class Arbol_Expr_Unaria_Bool
 		if tipo and tipo != BOOL
 			raise ErrorTipo.new(@posicion, tipo, BOOL)
 		end
-		operando = @der.eval(BOOL, tabla_sim)['valor']
+		@der.eval(BOOL, tabla_sim)
 		# El único operador unario es not
-		return {"tipo" => BOOL, "valor" => !operando}
+		return BOOL
 	end
 end
 
 class Arbol_Expr_Char
 	def eval (tipo, tabla_sim)
 		operador = @izq
-		tipo_retornado = CHAR
-		case operador
-			when '++'
-				if !tipo or tipo == CHAR
-					operando = @der.eval(CHAR, tabla_sim)['valor']
-					operando_ascii = operando.codepoints.first
-					return {"tipo" => CHAR, "valor" => (operando_ascii + 1).chr}
-				end
-			when '--'
-				if !tipo or tipo == CHAR
-					operando = @der.eval(CHAR, tabla_sim)['valor']
-					operando_ascii = operando.codepoints.first
-					return {"tipo" => CHAR, "valor" => (operando_ascii - 1).chr}
-				end
-			when '#'
-				tipo_retornado = INT
-				if !tipo or tipo == INT
-					operando = @der.eval(CHAR, tabla_sim)['valor']
-					return {"tipo" => INT, "valor" => operando.codepoints.first}
-				end
+		@der.eval(CHAR, tabla_sim)
+		if (operador == "++" or operador == "--") and tipo != CHAR
+			raise ErrorTipo.new(@der.posicion,CHAR,tipo)
 		end
-		raise ErrorTipo.new(@posicion,tipo_retornado,tipo)
+		if operador == "#" and tipo != INT
+			raise ErrorTipo.new(@der.posicion,INT,tipo)
+		end
 	end
 end
 
@@ -389,10 +345,11 @@ class Arbol_Expr_Unaria_Matr
 end
 
 class Arbol_Variable
+	# @valor lleva el identificador
 	def eval (tipo, tabla_sim)
 		if (e = tabla_sim.get(@valor))
 			if (!tipo or e.tipo == tipo)
-				return {"tipo" => e.tipo, "valor" => e.valor}
+				return e.tipo
 			end
 			raise ErrorTipo.new(@posicion, tipo, e.tipo)
 		end
@@ -403,9 +360,8 @@ end
 class Arbol_Literal_Bool
 	def eval (tipo, tabla_sim)
 		if !tipo or tipo == BOOL
-			return {"tipo" => BOOL, "valor" => @valor}
+			return BOOL
 		end
-		puts @posicion
 		raise ErrorTipo.new(@posicion,BOOL,tipo)
 	end
 end
@@ -413,7 +369,7 @@ end
 class Arbol_Literal_Char
 	def eval (tipo, tabla_sim)
 		if !tipo or tipo == CHAR
-			return {"tipo" => CHAR, "valor" => @valor}
+			return CHAR
 		end
 		raise ErrorTipo.new(@posicion,CHAR,tipo)
 	end
@@ -422,18 +378,21 @@ end
 class Arbol_Literal_Num
 	def eval (tipo, tabla_sim)
 		if !tipo or tipo == INT
-			return {"tipo" => INT, "valor" => Integer(@valor)}
+			return INT
 		end
 		raise ErrorTipo.new(@posicion,INT,tipo)
 	end
 end
 
 class Arbol_Literal_Matr
+	def matchTipo (tipo)
+		# Le pasamos un tipo y chequeamos que cuadren las dimensiones con las dimensiones de la lista
+	end
 	def eval (tipo, tabla_sim)
-		if tipo == INT
-			return @valor
+		if matchTipo(tipo)
+			return tipo
 		end
-		raise ErrorTipo.new(@posicion,tipo,INT)
+		raise ErrorTipo.new(@posicion,)
 	end
 end
 
@@ -446,7 +405,7 @@ class Arbol_Read
 				raise ErrorModificacionVariableProtegida.new(pos,variable)
 			end
 			if e.tipo.tipo != "matrix"
-				return {"tipo" => e.tipo, "valor" => e.valor}
+				return e.tipo
 			else
 				raise ErrorTipo.new(pos,tipo,INT,BOOL,CHAR)
 			end
@@ -468,7 +427,6 @@ end
 
 class Arbol_Condicional
 	def eval(tipo, tabla_sim)
-		binding.pry
 		@valor.eval(BOOL, tabla_sim)
 		@izq.eval(nil,tabla_sim)
 		@der.eval(nil,tabla_sim)
@@ -484,9 +442,7 @@ class Arbol_Asignacion
 			if (e.protegida)
 				raise ErrorModificacionVariableProtegida.new(pos,variable)
 			end
-			if (!tipo or e.tipo == tipo)
-				tabla_sim.update(variable,@der)
-			else
+			if tipo and e.tipo != tipo
 				raise ErrorTipo.new(pos,e.tipo,tipo)
 			end
 		else

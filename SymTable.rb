@@ -29,14 +29,6 @@ class TablaSimbolos
 		end
 	end
 
-	def eval
-		# Evalua cada declaración
-		# En ruby los Hash guardan los valores en el orden que fueron insertados
-		@tabla.each do |id,s|
-			s.eval(self) # Falta chequear que pasa si hacemos a <- a + a
-		end
-	end
-
 	def get (id)
 		e = self
 		while e != nil
@@ -48,15 +40,7 @@ class TablaSimbolos
 		end
 		return nil
 	end
-	def update(lvalue, arbol_expr)
-		simbolo = get(lvalue)
-		if simbolo != nil
-			rvalue = arbol_expr.eval(simbolo.tipo,self)['valor']
-			simbolo.valor = rvalue
-		else
-			raise ErrorVariableNoDeclarada.new(id, arbol_expr.posicion)
-		end
-	end
+
 end
 
 class Simbolo
@@ -73,10 +57,6 @@ class Simbolo
 		@tipo = tipo
 		self
 	end
-	def eval(tabla)
-		@tipo.eval(tabla)
-		@valor = @valor.eval(@tipo,tabla)['valor'] if @valor != nil
-	end
 	def to_s(nivel=0)
 		tabs = "\t" * nivel
 		str = tabs + "Identificador: #{@id} \n\t" + tabs + "Tipo: #{@tipo.to_s}\n"
@@ -86,16 +66,23 @@ class Simbolo
 end
 
 class Tipo
-	attr_reader :tipo, :dimensiones
+	attr_reader :tipo, :dimensiones, :tipo_param
 	def initialize(tipo,dimensiones=nil,tipo_param=nil)
 		@tipo = tipo
 		@dimensiones = dimensiones
 		@tipo_param = tipo_param
 	end
-	def eval(tabla)
-		@dimensiones.map! {|dim| dim.eval(Tipo.new('int'),tabla)} unless @dimensiones == nil
-		@tipo_param.eval(tabla) unless !(@tipo_param)
+	
+	def aplanar
+		e = self
+		dimensiones = [@dimensiones]
+		while (e = e.tipo_param) == "matrix"
+			dimensiones << e.dimensiones
+		end
+		@tipo = e.tipo
+		@dimensiones = dimensiones
 	end
+
 	def ==(x)
 		eq = @tipo == x.tipo
 		# Si los dos son distintos de nil

@@ -2,13 +2,14 @@ with
 	var n <- 5 : int
 	var j:int
 	var x:bool
+	var m:matrix [2,2] of matrix[3] of int
 begin 
     if n > n -> 
 		x <- not true . 
 		otherwise -> print  2%j.
 	end
 
-	for string from false to 'p' ->
+	for string from 1 to #'p' ->
 		print string.
 	end 
 

@@ -87,7 +87,6 @@ class Parser
 				  result = ArbolBloque.new(val[3],tabla)
 				}
 			  | 'begin' instruccion 'end' {
-				  binding.pry
 					result = ArbolBloque.new(val[1],TablaSimbolos.new())}
 
 		# Restringimos en la gramática que la especificación de las dimensiones de las matrices
@@ -98,14 +97,12 @@ class Parser
 			| 'matrix' '[' expresiones ']' 'of' tipo { result = Tipo.new('matrix',val[2],val[5]) }	
 
 		declaracion: 'var' declarables ':' tipo { 
-		binding.pry
 		result = val[1].map {|l| [l[0].set_type(val[3]),l[1]] }
 		}
 
 		declaraciones: declaraciones declaracion {
 		result = val[0] + val[1] }
 					 | declaracion {
-				 		binding.pry
 						result = val[0] }
 
 		declarable: 'id' '<-' expresion {
@@ -165,7 +162,6 @@ class Parser
 							arbol_rep = Arbol_Rep_Det.new(val[1],val[3],val[5],val[7])
 							simbolo_id = Simbolo.new(val[1],INT,nil,true)
 							tabla = TablaSimbolos.new([[simbolo_id,nil]])
-							binding.pry
 							result = ArbolBloque.new(arbol_rep,tabla)
 						}
 					  | 'for' 'id' 'from' expresion 'to' expresion 'step' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])}

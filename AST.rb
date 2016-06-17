@@ -103,7 +103,10 @@ class ArbolBloque
 		str
 	end
 	def eval(a=nil,b=nil)
-		#@tabla.eval
+		# Evalúo primero las asignaciones del with y luego el resto de instrucciones
+		@tabla.asignaciones.each do |asignacion|
+			asignacion.eval(nil,@tabla)
+		end
 		@instr.eval(nil,@tabla)
 	end
 end
@@ -389,16 +392,23 @@ class Arbol_Literal_Num
 end
 
 class Arbol_Literal_Matr
-	def forma
-		@valor.each do |elem|
-
-		end
-	end
 	def eval (tipo, tabla_sim)
-		if matchTipo(tipo)
-			return tipo
+		tipo_ant = nil
+		dim = 1
+		@valor.each do |elem|
+			# Chequear que los tipos de los valores sean iguales
+			tipo_elem = elem.eval(tipo_base,nil)
+			if tipo_ant
+				if tipo_elem.dimensionalidad != tipo_ant.dimensionalidad
+					raise ErrorDimensiones.new(@pos,tipo_elem.dimensionalidad,tipo_ant.dimensionalidad)
+				end
+				if tipo_elem.tipo_param != tipo_ant.tipo_param
+					raise ErrorTipo.new(@posicion,tipo_elem.tipo_param,tipo_ant.tipo_param)
+				end
+			end
+			tipo_ant = tipo_elem
 		end
-		raise ErrorTipo.new(@posicion,)
+		return Tipo.new("matrix",[],tipo_ant.tipo_param,tipo_ant.dimensionalidad)
 	end
 end
 

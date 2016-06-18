@@ -8,7 +8,7 @@ class Parser
 
 	prechigh
 		left '['
-		nonassoc MENOS_UNARIO
+		right MENOS_UNARIO
 		left '*' '/' '%'
 		left '+' '-'
 		left 'not'
@@ -19,7 +19,7 @@ class Parser
 		right '$'
 		left '?'
 		nonassoc '<=' '>=' '<' '>'
-		left '=' '/='
+		nonassoc '=' '/='
 		nonassoc '<-'
 	preclow
 
@@ -128,8 +128,8 @@ class Parser
 			   | 'caracter' {result = Arbol_Literal_Char.new(val[0])}
 			   | matriz {result = val[0]}
 
-		matriz: '{' '}' {result = Arbol_Literal_Matr.new([])}
-			  | '{' expresiones '}' {result = Arbol_Literal_Matr.new(val[1])}
+		matriz: '{' '}' {result = Arbol_Literal_Matr.new([],val[0])}
+			  | '{' expresiones '}' {result = Arbol_Literal_Matr.new(val[1],val[0])}
 
 		expresiones: expresiones ',' expresion {result = val[0] << val[2] }
 			   | expresion {result = [val[0]]}
@@ -194,7 +194,7 @@ class Parser
 		expresion_matr: expresion '::' expresion {result = Arbol_Expr_Matr.new('::',val[0],val[2])}
 					  | '$' expresion {result = Arbol_Expr_Unaria_Matr.new(nil,'$',val[1])}
 					  | expresion '?' {result = Arbol_Expr_Unaria_Matr.new(nil,'?',val[0])}
-      		  		  | expresion '[' expresiones ']' {result = Arbol_Indexacion.new(nil,val[0],val[2])}
+      		  		  | expresion '[' expresiones ']' {result = Arbol_Indexacion.new(val[1],val[0],val[2])}
 
 
 		expresion_rel: expresion '=' expresion 	{result = Arbol_Expr_Rel.new('=',val[0],val[2])}
@@ -277,6 +277,7 @@ if l.errores.empty?
 	begin
 		p = Parser.new(l.tokens)
 		x = p.parse
+		x.eval
 		puts x
 	rescue ErrorSintactico => e
 		puts "Error sintactico: #{e}"

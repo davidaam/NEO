@@ -68,35 +68,43 @@ end
 # Sin embargo los diferentes tipos matrix se van creando a medida se solicitan en el programa
 # Por lo tanto, dimensiones, tipo_param, forma y dimencionalidad son atributos para manipular
 # mejor las matrices
-# @dimensiones: representa
-# @tipo_param: es el tipo final, distinto de matriz que tiene al final de la posible recursion
+# @dimensiones: representa las dimensiones del tipo. Si es una matriz es una lista de listas
+# con las dimensiones
+# @tipo_param: es el tipo de los elementos
 # @forma: Representa la forma de indexacion de la matriz. Es decir matrix [2] of matrix [3] of
-#  		int === [1,1]
-# @dimencionalidad: Representa la cantidad general de dimensiones de manera que se facilite
-# 					la interpretacion, operacion y comparacion de literales_matriciales.
+#  		int === [1,1], matrix[1,1,1,1] of matrix [2,2] of int == [4,2]
+# @dimensionalidad: Representa la cantidad general de dimensiones de manera que se facilite
+# 					la interpretacion, operacion y comparacion de tipos matriz.
 class Tipo
-	attr_reader :tipo, :dimensiones, :tipo_param, :forma, :dimensionalidad
-	def initialize(tipo,dimensiones=[],tipo_param=nil,dimensionalidad=0)
+	attr_reader :tipo, :dimensiones, :forma
+	attr_accessor :tipo_param, :dimensionalidad
+	def initialize(tipo,dimensiones=[],tipo_param=nil,dimensionalidad=0,forma=[],plano=false)
 		@tipo = tipo
 		@dimensiones = dimensiones
 		@tipo_param = tipo_param
-		@forma = []
+		@forma = forma
 		@dimensionalidad = dimensionalidad
-		aplanar() # Aplano la definición recursiva del tipo
+		if !plano
+			aplanar() # Aplano la definición recursiva del tipo
+		end
 	end
-	
+	# Aplanamos la definición recursiva de un tipo (ej matrix of matrix of ... of int)
+	# a una estructura plana
 	def aplanar
-		if @tipo == "matrix" and !@dimensiones.empty?
-			e = self
+		if @tipo == "matrix"
 			dimensiones = [@dimensiones]
-			while !(e = e.tipo_param).tipo_param.nil?
-				dimensiones << e.dimensiones
+			if !@dimensiones.empty?
+				e = self
+				while !(e = e.tipo_param).tipo_param.nil?
+					dimensiones << e.dimensiones
+				end
+				@tipo_param = e
 			end
-			@tipo_param = e
 			@dimensiones = dimensiones
 			@forma = @dimensiones.map { |d| d.length }
 			@dimensionalidad = @forma.reduce(0, :+)
 		end
+		self
 	end
 
 	def ==(x)
@@ -110,6 +118,7 @@ class Tipo
 			if @dimensionalidad != x.dimensionalidad
 				eq = false
 			end
+			# Si los elementos son distintos, no son iguales
 			if @tipo_param != x.tipo_param
 				eq = false
 			end
@@ -118,8 +127,9 @@ class Tipo
 	end
 	def to_s
 		str = @tipo
-		str += " " + @dimensiones._to_s if !@dimensiones.empty?
-		str += " of " + @tipo_param.to_s if @tipo_param
+		if @tipo == "matrix"
+			str += " of #{@tipo_param} | Dimensionalidad: #{@dimensionalidad}"
+		end
 		str
 	end
 end
@@ -147,8 +157,8 @@ class ErrorTipo < ErrorEstatico
 	def initialize(posicion, tipo_dado, *tipos_esperados)
 		@tipos_esperados = tipos_esperados
 		@tipo_dado = tipo_dado
-		@linea = posicion["linea"]
-		@columna = posicion["columna"]
+		@linea = posicion["linea"] unless posicion.nil?
+		@columna = posicion["columna"] unless posicion.nil?
 	end
 	def to_s
 		if @tipos_esperados.length == 1
@@ -191,6 +201,19 @@ class ErrorModificacionVariableProtegida < ErrorEstatico
 		"En la linea: #{@linea} y columna: #{@columna}, Se intentó modificar la variable de control #{@id}"
 	end
 end
+
+class ErrorFormaIndexacion < ErrorEstatico
+	def initialize(posicion, forma_dada, forma_esperada)
+		@forma_dada = forma_dada
+		@forma_esperada = forma_esperada
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
+	end
+	def to_s
+		"En la linea: #{@linea} y columna: #{@columna}, Se esperaba una matriz que se indexara con la forma #{@forma_esperada}, pero se encontró #{@forma_dada}"
+	end
+end
+
 # Tipos básicos
 BOOL = Tipo.new('bool')
 CHAR = Tipo.new('char')

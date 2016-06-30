@@ -77,7 +77,6 @@ class Lexer
 
       # Leer archivo y eliminar comentarios antes de procesarlo (preservando las lineas y columnas)
       text = File.read(archivo)
-      
       # Elimino los comentarios de linea
       text.gsub!(/%%.*$/,'')
 

@@ -49,7 +49,7 @@ end
 
 class Parser < Racc::Parser
 
-module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 250)
+module_eval(<<'...end gramatica.y/module_eval...', 'gramatica.y', 255)
 
 	def on_error(id, token, stack)
 		raise ErrorSintactico::new(token)
@@ -1009,217 +1009,221 @@ module_eval(<<'.,.,', 'gramatica.y', 161)
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 166)
+module_eval(<<'.,.,', 'gramatica.y', 167)
   def _reduce_44(val, _values, result)
-    result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])
+    					  		arbol_rep = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])
+							simbolo_id = Simbolo.new(val[1],INT,nil,true)
+							tabla = TablaSimbolos.new([[simbolo_id,nil]])
+							result = ArbolBloque.new(arbol_rep,tabla)
+					  	
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 168)
+module_eval(<<'.,.,', 'gramatica.y', 173)
   def _reduce_45(val, _values, result)
     result = Arbol_Rep_Indet.new(nil, val[1], val[3])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 170)
+module_eval(<<'.,.,', 'gramatica.y', 175)
   def _reduce_46(val, _values, result)
     result = val[0]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 171)
+module_eval(<<'.,.,', 'gramatica.y', 176)
   def _reduce_47(val, _values, result)
     result = val[0]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 172)
+module_eval(<<'.,.,', 'gramatica.y', 177)
   def _reduce_48(val, _values, result)
     result = val[0]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 173)
+module_eval(<<'.,.,', 'gramatica.y', 178)
   def _reduce_49(val, _values, result)
     result = val[0]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 174)
+module_eval(<<'.,.,', 'gramatica.y', 179)
   def _reduce_50(val, _values, result)
     result = val[0]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 175)
+module_eval(<<'.,.,', 'gramatica.y', 180)
   def _reduce_51(val, _values, result)
     result = val[1]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 176)
+module_eval(<<'.,.,', 'gramatica.y', 181)
   def _reduce_52(val, _values, result)
     result = val[0]
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 178)
+module_eval(<<'.,.,', 'gramatica.y', 183)
   def _reduce_53(val, _values, result)
     result = Arbol_Expr_Aritm.new('+',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 179)
+module_eval(<<'.,.,', 'gramatica.y', 184)
   def _reduce_54(val, _values, result)
     result = Arbol_Expr_Aritm.new('-',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 180)
+module_eval(<<'.,.,', 'gramatica.y', 185)
   def _reduce_55(val, _values, result)
     result = Arbol_Expr_Aritm.new('*',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 181)
+module_eval(<<'.,.,', 'gramatica.y', 186)
   def _reduce_56(val, _values, result)
     result = Arbol_Expr_Aritm.new('/',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 182)
+module_eval(<<'.,.,', 'gramatica.y', 187)
   def _reduce_57(val, _values, result)
     result = Arbol_Expr_Aritm.new('%',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 183)
+module_eval(<<'.,.,', 'gramatica.y', 188)
   def _reduce_58(val, _values, result)
     result = Arbol_Expr_Unaria_Aritm.new(nil,'-',val[1])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 185)
+module_eval(<<'.,.,', 'gramatica.y', 190)
   def _reduce_59(val, _values, result)
     result = Arbol_Expr_Bool.new('/\\',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 186)
+module_eval(<<'.,.,', 'gramatica.y', 191)
   def _reduce_60(val, _values, result)
     result = Arbol_Expr_Bool.new('\\/',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 187)
+module_eval(<<'.,.,', 'gramatica.y', 192)
   def _reduce_61(val, _values, result)
     result = Arbol_Expr_Unaria_Bool.new(nil,'not',val[1])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 189)
+module_eval(<<'.,.,', 'gramatica.y', 194)
   def _reduce_62(val, _values, result)
     result = Arbol_Expr_Char.new(nil,'++',val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 190)
+module_eval(<<'.,.,', 'gramatica.y', 195)
   def _reduce_63(val, _values, result)
     result = Arbol_Expr_Char.new(nil,'--',val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 191)
+module_eval(<<'.,.,', 'gramatica.y', 196)
   def _reduce_64(val, _values, result)
     result = Arbol_Expr_Char.new(nil,'#',val[1])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 193)
+module_eval(<<'.,.,', 'gramatica.y', 198)
   def _reduce_65(val, _values, result)
     result = Arbol_Expr_Matr.new('::',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 194)
+module_eval(<<'.,.,', 'gramatica.y', 199)
   def _reduce_66(val, _values, result)
     result = Arbol_Expr_Unaria_Matr.new(nil,'$',val[1])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 195)
+module_eval(<<'.,.,', 'gramatica.y', 200)
   def _reduce_67(val, _values, result)
     result = Arbol_Expr_Unaria_Matr.new(nil,'?',val[0])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 196)
+module_eval(<<'.,.,', 'gramatica.y', 201)
   def _reduce_68(val, _values, result)
     result = Arbol_Indexacion.new(val[1],val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 199)
+module_eval(<<'.,.,', 'gramatica.y', 204)
   def _reduce_69(val, _values, result)
     result = Arbol_Expr_Rel.new('=',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 200)
+module_eval(<<'.,.,', 'gramatica.y', 205)
   def _reduce_70(val, _values, result)
     result = Arbol_Expr_Rel.new('/=',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 201)
+module_eval(<<'.,.,', 'gramatica.y', 206)
   def _reduce_71(val, _values, result)
     result = Arbol_Expr_Rel.new('<',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 202)
+module_eval(<<'.,.,', 'gramatica.y', 207)
   def _reduce_72(val, _values, result)
     result = Arbol_Expr_Rel.new('>',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 203)
+module_eval(<<'.,.,', 'gramatica.y', 208)
   def _reduce_73(val, _values, result)
     result = Arbol_Expr_Rel.new('<=',val[0],val[2])
     result
   end
 .,.,
 
-module_eval(<<'.,.,', 'gramatica.y', 204)
+module_eval(<<'.,.,', 'gramatica.y', 209)
   def _reduce_74(val, _values, result)
     result = Arbol_Expr_Rel.new('>=',val[0],val[2])
     result
@@ -1238,8 +1242,8 @@ if l.errores.empty?
 	begin
 		p = Parser.new(l.tokens)
 		x = p.parse
+		x.check
 		x.eval
-		puts x
 	rescue ErrorSintactico => e
 		puts "Error sintactico: #{e}"
 	rescue ErrorEstatico => e

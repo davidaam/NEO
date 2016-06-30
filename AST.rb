@@ -77,13 +77,32 @@ class ArbolBloque
 		str += "AST\n" + @instr.to_s
 		str
 	end
-	def eval(a=nil,b=nil)
-		# Evalúo primero las asignaciones del with y luego el resto de instrucciones
+	def check(a=nil,b=nil)
+		# chequeo primero las asignaciones del with y luego el resto de instrucciones
 		@tabla.asignaciones.each do |asignacion|
-			asignacion.eval(nil,@tabla)
+			asignacion.check(nil,@tabla)
 		end
-		@instr.eval(nil,@tabla)
+		@instr.check(nil,@tabla)
 	end
+	def eval(tabla_sim=nil)
+		# evaluó los tamaños de las matrices
+		@tabla.tabla.each do |id,simbolo|
+			if !simbolo.tipo.dimensiones.nil?
+				simbolo.tipo.dimensiones.map! do |dims|
+					dims.each do |d|
+						d.check(INT, @tabla)
+						d.eval(@tabla)
+					end
+				end			
+			end
+		end
+		# evalúo primero las asignaciones del with y luego el resto de instrucciones
+		@tabla.asignaciones.each do |asignacion|
+			asignacion.eval(@tabla)
+		end
+		@instr.eval(@tabla)
+	end
+	
 end
 
 # Definimos la clase arbol binario para modelar árboles de derivación que a lo más tengan dos hijos
@@ -154,10 +173,15 @@ class Arbol_Secuenciacion
 			end
 		end
 	end
-	# Evaluar una secuenciacion es evaluar cada una de sus instrucciones
-	def eval(tipo, tabla)
+	# chequear una secuenciacion es checkuar cada una de sus instrucciones
+	def check(tipo, tabla)
 		@hijos.each do |instr|
-			instr.eval(nil,tabla)
+			instr.check(nil,tabla)
+		end
+	end
+	def eval(tabla_sim)
+		@hijos.each do |instr|
+			instr.eval(tabla_sim)
 		end
 	end
 end
@@ -194,12 +218,34 @@ class Arbol_Rep_Det
 		""
 	end
 
-	def eval(tipo, tabla)
-		# Evaluamos from, to, step a ver si son enteros, y la instruccion de la repetición
-		@from.eval(INT, tabla)
-		@to.eval(INT, tabla)
-		@step.eval(INT, tabla) unless @step.nil?
-		@instruccion.eval(nil, tabla)
+	def check(tipo, tabla)
+		# chequeamos from, to, step a ver si son enteros, y la instruccion de la repetición
+		@from.check(INT, tabla)
+		@to.check(INT, tabla)
+		@step.check(INT, tabla) unless @step.nil?
+		@instruccion.check(nil, tabla)
+	end
+	
+	def eval(tabla_sim)
+		#binding.pry
+		step = @step.eval(tabla_sim)
+
+		if step == 0
+			raise ErrorPasoCero.new(@posicion)
+		end
+
+		from = @from.eval(tabla_sim)
+		to = @to.eval(tabla_sim)
+		
+		pasos = [(to - from + 1)/step, 0].max
+		
+		identificador = tabla_sim.get(@id)
+		identificador.valor = from
+		
+		(0...pasos).each do |i|
+			@instruccion.eval(tabla_sim)
+			identificador.valor += step
+		end
 	end
 end
 
@@ -224,45 +270,80 @@ ARBOLES.each do |tipo_arbol,descripcion|
 	)
 end
 
-# Creamos el metodo eval para cada clase que chequea los tipos
+# Creamos el metodo check para cada clase que chequea los tipos
 # NOTA: nil representa cualquier tipo
 
 class Arbol_Expr_Aritm
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeamos que el tipo esperado sea entero o nil
 		if tipo and tipo != INT
 			raise ErrorTipo.new(@izq.posicion, tipo, INT)
 		end
-		@izq.eval(INT, tabla_sim)
-		@der.eval(INT, tabla_sim)
-
+		@izq.check(INT, tabla_sim)
+		@der.check(INT, tabla_sim)
 		return INT
+	end
+	def eval (tabla_sim)
+		op_izq = @izq.eval(tabla_sim)
+		op_der = @der.eval(tabla_sim)
+		operador = @valor
+		case operador
+			when '+'
+				return op_izq + op_der
+			when '-'
+				return op_izq - op_der
+			when '*'
+				return op_izq * op_der
+			when '/'
+				if op_der == 0
+					raise ErrorDivisionEntreCero.new(@der.posicion)
+				else
+					return op_izq / op_der
+				end
+			when '%'
+				if op_der == 0
+					raise ErrorDivisionEntreCero.new(@der.posicion)
+				else
+					return op_izq % op_der
+				end
+		end
 	end
 end
 
 class Arbol_Expr_Bool
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeo que el tipo esperado sea bool o nil
 		if tipo and tipo != BOOL
 			raise ErrorTipo.new(@izq.posicion,tipo,BOOL)
 		end
-		@izq.eval(BOOL, tabla_sim)
-		@der.eval(BOOL, tabla_sim)
+		@izq.check(BOOL, tabla_sim)
+		@der.check(BOOL, tabla_sim)
 		return BOOL
+	end
+	def eval (tabla_sim)
+		op_izq = @izq.eval(tabla_sim)
+		op_der = @der.eval(tabla_sim)
+		operador = @valor
+		case operador
+			when "/\\"
+				op_izq and op_der
+			when "\\/"
+				op_izq or op_der
+		end
 	end
 end
 
 class Arbol_Expr_Rel
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeo que el tipo esperado sea bool o nil
 		if tipo and tipo != BOOL
 			raise ErrorTipo.new(@izq.posicion,tipo,BOOL)
 		end		
 		
 		# Obtenemos el tipo del op_izq
-		tipo_op_izq = @izq.eval(nil, tabla_sim)
+		tipo_op_izq = @izq.check(nil, tabla_sim)
 		# Chequeamos que el op_der sea del mismo tipo que el izq
-		tipo_op_der = @der.eval(tipo_op_der, tabla_sim)
+		tipo_op_der = @der.check(tipo_op_der, tabla_sim)
 
 		# Si estamos comparando matrices con un operador que no sea ni "=" ni "!=", error.
 		if tipo_op_izq.tipo == "matrix" and @valor != "=" and @valor != "!="
@@ -270,54 +351,90 @@ class Arbol_Expr_Rel
 		end
 		return BOOL
 	end
+	def eval (tabla_sim)
+		op_izq = @izq.eval(tabla_sim)
+		op_der = @der.eval(tabla_sim)
+		operador = @valor
+		case operador
+			when '<'
+				valor = op_izq < op_der
+			when '<='
+				valor = op_izq <= op_der
+			when '>'
+				valor = op_izq > op_der
+			when '>='
+				valor = op_izq >= op_der
+			when '='
+				valor = op_izq == op_der
+		end
+	end
 end
 
 class Arbol_Expr_Unaria_Aritm
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeamos que el tipo esperado sea int o nil
 		if tipo and tipo != INT
 			raise ErrorTipo.new(@posicion, tipo, INT)
 		end
-		@der.eval(INT, tabla_sim)
+		@der.check(INT, tabla_sim)
 		return INT
+	end
+	def eval (tabla_sim)
+		return (-1) * @der.valor
 	end
 end
 
 class Arbol_Expr_Unaria_Bool
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeamos que el tipo esperado sea bool o nil
 		if tipo and tipo != BOOL
 			raise ErrorTipo.new(@posicion, tipo, BOOL)
 		end
-		@der.eval(BOOL, tabla_sim)
+		@der.check(BOOL, tabla_sim)
 		return BOOL
 	end
+	def eval (tabla_sim)
+		return !@der.valor
+	end 
 end
 
 class Arbol_Expr_Char
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		operador = @izq
 		# Chequeamos que el operando sea char
-		@der.eval(CHAR, tabla_sim)
+		@der.check(CHAR, tabla_sim)
 		# Chequeamos que el tipo esperado sea char si el operador es ++ o --
-		if (operador == "++" or operador == "--") and tipo != CHAR
+		if (operador == "++" or operador == "--") and tipo and tipo != CHAR
 			raise ErrorTipo.new(@der.posicion,CHAR,tipo)
 		end
 		# Chequeamos que el tipo esperado sea int si el operador es #
-		if operador == "#" and tipo != INT
+		if operador == "#" and tipo and tipo != INT
 			raise ErrorTipo.new(@der.posicion,INT,tipo)
+		end
+	end
+	def eval (tabla_sim)
+		operador = @izq
+		operando = @der.eval(tabla_sim)
+		valor_ascii = operando.codepoints.first
+		case operador
+			when '++'
+				return (valor_ascii+1).chr
+			when '--'
+				return (valor_ascii-1).chr
+			when '#'
+				return valor_ascii
 		end
 	end
 end
 
 class Arbol_Expr_Matr
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Si espero algo que no es matriz, error
 		if tipo.tipo != "matrix"
 			raise ErrorTipo.new(@posicion,tipo_op_izq,tipo)
 		end
-		tipo_op_izq = @izq.eval(tipo, tabla_sim)
-		tipo_op_der = @der.eval(tipo, tabla_sim)
+		tipo_op_izq = @izq.check(tipo, tabla_sim)
+		tipo_op_der = @der.check(tipo, tabla_sim)
 		# Si alguno de los dos es un literal (no tiene forma de indexacion), o si la forma de ambos es igual
 		# entonces retorno el tipo del izq que es igual a der y a tipo porque llegamos hasta aqui
 		if tipo_op_izq.forma.empty? or tipo_op_der.forma.empty? or tipo_op_izq.forma == tipo_op_der.forma
@@ -330,20 +447,20 @@ class Arbol_Expr_Matr
 end
 
 class Arbol_Expr_Unaria_Matr
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeamos que se esté esperando una matriz
 		if tipo.tipo != "matrix"
 			raise ErrorTipo.new(@posicion,tipo_operando,tipo)
 		end
 		# Chequeamos que el operando concuerde con el tipo matriz esperado
-		tipo_operando = @der.eval(tipo, tabla_sim)
+		tipo_operando = @der.check(tipo, tabla_sim)
 		return tipo_operando
 	end
 end
 
 class Arbol_Variable
 	# @valor lleva el identificador
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		e = buscar(tabla_sim)
 		# Si el tipo esperado es nil, o el tipo esperado concuerda con el tipo de la variable, retorna su tipo
 		if !tipo or e.tipo == tipo
@@ -359,35 +476,52 @@ class Arbol_Variable
 		# Si no encuentra la variable en ninguna tabla, la variable no está declarada
 		raise ErrorVariableNoDeclarada.new(@posicion,@valor)
 	end
+	def eval (tabla_sim)
+		simbolo = buscar(tabla_sim)
+		if simbolo.valor.nil?
+			raise ErrorVariableNoInstanciada.new(@posicion, @valor)
+		else
+			return simbolo.valor
+		end
+	end
 end
 
 class Arbol_Literal_Bool
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeamos que el tipo esperado sea bool o nil
 		if !tipo or tipo == BOOL
 			return BOOL
 		end
 		raise ErrorTipo.new(@posicion,BOOL,tipo)
 	end
+	def eval (tabla_sim)
+		return @valor == 'true' ? true : false
+	end
 end
 
 class Arbol_Literal_Char
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeamos que el tipo esperado sea char o nil
 		if !tipo or tipo == CHAR
 			return CHAR
 		end
 		raise ErrorTipo.new(@posicion,CHAR,tipo)
 	end
+	def eval (tabla_sim)
+		return @valor
+	end
 end
 
 class Arbol_Literal_Num
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Chequeamos que el tipo esperado sea int o nil
 		if !tipo or tipo == INT
 			return INT
 		end
 		raise ErrorTipo.new(@posicion,INT,tipo)
+	end
+	def eval (tabla_sim)
+		Integer(@valor)
 	end
 end
 
@@ -416,7 +550,7 @@ class Arbol_Literal_Matr
 		end
 		return dim + dim_ant
 	end
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		# Sacamaos la dimensionalidad del tipo esperado
 		dim = tipo.dimensionalidad
 		# El tipo esperado de los elementos de la matriz es una matriz con una dim menos, o si es de una dimension, el tipo de sus elementos
@@ -434,7 +568,7 @@ class Arbol_Literal_Matr
 
 		@valor.each do |elem|
 			# Chequear que los tipos de los valores sean iguales
-			tipo_elem = elem.eval(tipo_esperado_elems,tabla_sim)
+			tipo_elem = elem.check(tipo_esperado_elems,tabla_sim)
 			
 			tipo_elem.tipo_param = tipo_esperado_param
 			if tipo_elem != tipo_esperado_elems	
@@ -446,16 +580,20 @@ class Arbol_Literal_Matr
 		end
 		return Tipo.new("matrix",[],tipo_esperado_param,dim,[],true)
 	end
+	def eval (tabla_sim)
+
+	end
+
 end
 
 class Arbol_Indexacion
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		index_dim = @der.length # Cuantas dimensiones se estan indexando
 		tipo_esperado_param = tipo.dimensionalidad > 0 ? tipo.tipo_param : tipo
 		# Se espera que el operando sea una matriz de dimension del tipo esperado + dim indexacion,
 		# con elementos del mismo tipo
 		tipo_esperado_operando = Tipo.new("matrix",[],tipo_esperado_param,tipo.dimensionalidad+index_dim,[],true)
-		tipo_operando = @izq.eval(tipo_esperado_operando, tabla_sim)
+		tipo_operando = @izq.check(tipo_esperado_operando, tabla_sim)
 		
 		if tipo_operando.tipo != "matrix"
 			raise ErrorTipo.new(@posicion,tipo_operando,tipo)
@@ -484,7 +622,7 @@ class Arbol_Indexacion
 end
 
 class Arbol_Read
-	def eval (tipo, tabla_sim)
+	def check (tipo, tabla_sim)
 		pos = @valor.posicion
 		variable = @valor.valor
 		if (e = tabla_sim.get(variable))
@@ -498,39 +636,102 @@ class Arbol_Read
 			end
 		end
 	end
+	def eval (tabla_sim)
+		simbolo = @valor.buscar(tabla_sim)
+		valor = $stdin.gets.chomp
+		tipo = simbolo.tipo
+
+		if tipo.tipo == "matrix"
+			if valor[0] == "{" and valor[-1] == "}"
+				literal_str = valor.gsub!('{','[').gsub!('}',']')
+				begin 
+					lista = Kernel::eval(literal_str)
+					
+				rescue SyntaxError
+					raise ErrorLectura.new(@posicion,"matrix")
+				end
+			else
+				raise ErrorLectura.new(@posicion,"matrix")
+			end
+		end
+
+		case tipo
+			when INT
+				begin
+					simbolo.valor = Integer(valor)
+				rescue ArgumentError
+					raise ErrorLectura.new(@posicion, "int")
+				end
+			when BOOL
+				if valor == "true"
+					simbolo.valor = true
+				elsif valor == "false"
+					simbolo.valor = false
+				else
+					raise ErrorLectura.new(@posicion, "bool")
+				end
+			when CHAR
+				if valor.match (/([^'\\]|\\n|\\t|\\'|\\\\)$/)
+					simbolo.valor = $1
+				else
+					raise ErrorLectura.new(@posicion, "char")
+				end	
+		end
+	end
 end
 class Arbol_Print
-	def eval (tipo, tabla_sim)
-		@valor.eval(nil,tabla_sim)
+	def check (tipo, tabla_sim)
+		@valor.check(nil,tabla_sim)
+	end
+	def eval (tabla_sim)
+		puts @valor.eval(tabla_sim)
 	end
 end
 
 class Arbol_Rep_Indet
-	def eval(tipo, tabla_sim)
-		@izq.eval(BOOL, tabla_sim)
-		@der.eval(nil, tabla_sim)
+	def check(tipo, tabla_sim)
+		@izq.check(BOOL, tabla_sim)
+		@der.check(nil, tabla_sim)
+	end
+	def eval(tabla_sim)
+		while (@izq.eval(tabla_sim))
+			@der.eval(tabla_sim)
+		end
 	end
 end
 
 class Arbol_Condicional
-	def eval(tipo, tabla_sim)
-		@valor.eval(BOOL, tabla_sim)
-		@izq.eval(nil,tabla_sim)
-		@der.eval(nil,tabla_sim)
+	def check(tipo, tabla_sim)
+		@valor.check(BOOL, tabla_sim)
+		@izq.check(nil,tabla_sim)
+		if !@der.nil?
+			@der.check(nil,tabla_sim)
+		end
+	end
+	def eval (tabla_sim)
+		if (@valor.eval(tabla_sim))
+			@izq.eval(tabla_sim)
+		elsif (!@der.nil?)
+			@der.eval(tabla_sim)	
+		end
 	end
 end
 
 class Arbol_Asignacion
-	def eval(tipo, tabla_sim)
+	def check(tipo, tabla_sim)
 		pos = @der.posicion # Posición del valor asignado
 		identificador = @izq.valor
-		tipo_var = @izq.eval(nil, tabla_sim)
+		tipo_var = @izq.check(nil, tabla_sim)
 		sim_var = @izq.buscar(tabla_sim)
 		if (sim_var.protegida)
 			raise ErrorModificacionVariableProtegida.new(pos,identificador)
 		end
-		rval_tipo = @der.eval(tipo_var,tabla_sim)
+		rval_tipo = @der.check(tipo_var,tabla_sim)
 		# Si pasa todo esto, cambiamos el tipo del literal (dimensiones y forma)
 		rval_tipo = tipo_var
+	end
+	def eval (tabla_sim)
+		sim_var = @izq.buscar(tabla_sim)
+		sim_var.valor = @der.eval(tabla_sim)
 	end
 end

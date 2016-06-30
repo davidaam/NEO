@@ -164,7 +164,12 @@ class Parser
 							tabla = TablaSimbolos.new([[simbolo_id,nil]])
 							result = ArbolBloque.new(arbol_rep,tabla)
 						}
-					  | 'for' 'id' 'from' expresion 'to' expresion 'step' expresion '->' instruccion 'end' {result = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])}
+					  | 'for' 'id' 'from' expresion 'to' expresion 'step' expresion '->' instruccion 'end' {
+					  		arbol_rep = Arbol_Rep_Det.new(val[1],val[3],val[5],val[9],val[7])
+							simbolo_id = Simbolo.new(val[1],INT,nil,true)
+							tabla = TablaSimbolos.new([[simbolo_id,nil]])
+							result = ArbolBloque.new(arbol_rep,tabla)
+					  	}
 
 		repeticion_indet: 'while' expresion '->' instruccion 'end' {result = Arbol_Rep_Indet.new(nil, val[1], val[3])}
 
@@ -277,8 +282,8 @@ if l.errores.empty?
 	begin
 		p = Parser.new(l.tokens)
 		x = p.parse
+		x.check
 		x.eval
-		puts x
 	rescue ErrorSintactico => e
 		puts "Error sintactico: #{e}"
 	rescue ErrorEstatico => e

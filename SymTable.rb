@@ -31,7 +31,6 @@ class TablaSimbolos
 	def get (id)
 		e = self
 		while e != nil
-			#
 			if e.tabla.has_key?(id) and (e.tabla[id].valor == nil or e.tabla[id].valor.class.superclass != ArbolBinario)
 				return e.tabla[id]
 			end
@@ -76,8 +75,8 @@ end
 # @dimensionalidad: Representa la cantidad general de dimensiones de manera que se facilite
 # 					la interpretacion, operacion y comparacion de tipos matriz.
 class Tipo
-	attr_reader :tipo, :dimensiones, :forma
-	attr_accessor :tipo_param, :dimensionalidad
+	attr_reader :tipo, :forma
+	attr_accessor :tipo_param, :dimensionalidad, :dimensiones
 	def initialize(tipo,dimensiones=[],tipo_param=nil,dimensionalidad=0,forma=[],plano=false)
 		@tipo = tipo
 		@dimensiones = dimensiones
@@ -96,13 +95,14 @@ class Tipo
 			if !@dimensiones.empty?
 				e = self
 				while !(e = e.tipo_param).tipo_param.nil?
-					dimensiones << e.dimensiones
+					dimensiones = dimensiones + e.dimensiones
 				end
 				@tipo_param = e
 			end
 			@dimensiones = dimensiones
 			@forma = @dimensiones.map { |d| d.length }
 			@dimensionalidad = @forma.reduce(0, :+)
+			@tipo_param.tipo_param = nil
 		end
 		self
 	end
@@ -137,6 +137,9 @@ end
 # Errores
 
 class ErrorEstatico < RuntimeError
+end
+
+class ErrorDinamico < RuntimeError
 end
 
 class ErrorDimensiones < ErrorEstatico
@@ -211,6 +214,70 @@ class ErrorFormaIndexacion < ErrorEstatico
 	end
 	def to_s
 		"En la linea: #{@linea} y columna: #{@columna}, Se esperaba una matriz que se indexara con la forma #{@forma_esperada}, pero se encontró #{@forma_dada}"
+	end
+end
+
+
+class ErrorVariableNoInstanciada < ErrorDinamico
+	def initialize(posicion, id)
+		@id = id
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
+	end
+	def to_s
+		"En la linea: #{@linea} y columna: #{@columna}, Se intentó utilizar la variable #{@id} no instanciada"
+	end
+end
+
+class ErrorTamanoMatriz < ErrorDinamico
+	def initialize(posicion)
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
+	end
+	def to_s
+		"En la linea: #{@linea} y columna: #{@columna}, error en tamaño de la matriz"
+	end
+end
+
+class ErrorLectura < ErrorDinamico
+	def initialize(posicion, id)
+		@tipo = tipo
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
+	end
+	def to_s
+		"En la linea: #{@linea} y columna: #{@columna}, se pidió un tipo #{tipo} y no se recibió"
+	end
+end
+
+class ErrorPasoCero < ErrorDinamico
+	def initialize(posicion)
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
+	end
+	def to_s
+		"En la linea: #{@linea} y columna: #{@columna}, se pasó step = 0"
+	end
+end
+
+class ErrorDivisionEntreCero < ErrorDinamico
+	def initialize(posicion)
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
+	end
+	def to_s
+		"En la linea: #{@linea} y columna: #{@columna}, se intentó dividir entre cero"
+	end
+end
+class ErrorIndexacionFueraLimites < ErrorDinamico
+	def initialize(posicion, indices, tam)
+		@indices = indices
+		@tam = tam
+		@linea = posicion["linea"]
+		@columna = posicion["columna"]
+	end
+	def to_s
+		"En la linea: #{@linea} y columna: #{@columna}, se intentó indexar la matriz con tamaño #{@tam} con los indices #{@indices}"
 	end
 end
 

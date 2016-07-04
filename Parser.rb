@@ -1248,5 +1248,7 @@ if l.errores.empty?
 		puts "Error sintactico: #{e}"
 	rescue ErrorEstatico => e
 		puts "Error estático: #{e}"
+	rescue ErrorDinamico => e
+		puts "Error dinámico: #{e}"
 	end
 end

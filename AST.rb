@@ -8,6 +8,9 @@ class Object
 	def _to_s (nivel=1)
 		self.to_s
 	end
+	def eval (tabla_sim)
+		return self
+	end
 end
 
 # Se define _to_s para arreglos como un _to_s recursivo, de forma que se imprima la representación
@@ -22,6 +25,44 @@ class Array
 			str += ("\t" * (nivel)) + "#{elem._to_s(nivel+1)} \n"
 		end
 		str += ("\t" * (nivel-1)) + "]"
+	end
+	def calcularTamano
+		if self.length == 0
+			return [0]
+		end
+		tamanos = [self.length]
+		tam_ant = nil
+		tam_h = []
+		self.each do |l|
+			if l.class == Array
+				tam_h = l.calcularTamano
+				if !tam_ant.nil?
+					if tam_ant != tam_h
+						return nil
+					end
+				end
+				tam_ant = tam_h
+			end
+		end
+		if tam_h.nil?
+			return nil
+		end
+		return tamanos + tam_h
+	end
+	def eval (tabla_sim)
+		i = 0
+		l = Array.new(self)
+		while i < l.length
+			l[i] = l[i].eval(tabla_sim)
+			i += 1
+		end
+		return l
+	end
+	def nest (k)
+		if k == 0
+			return self
+		end
+		return [self.nest(k-1)]
 	end
 end
 
@@ -54,9 +95,9 @@ class ArbolBloque
 		@instr = instr
 		@tabla = tabla
 	end
-	def set_tabla_padre (padre)
+	def set_tabla_padre (padre=nil)
 		@tabla.padre = padre
-		@instr.set_tabla_padre(self)
+		@instr.set_tabla_padre(self.tabla)
 	end
 	def tabla_to_s(nivel=0)
 		if @tabla.tabla.length > 0
@@ -88,12 +129,17 @@ class ArbolBloque
 		# evaluó los tamaños de las matrices
 		@tabla.tabla.each do |id,simbolo|
 			if !simbolo.tipo.dimensiones.nil?
-				simbolo.tipo.dimensiones.map! do |dims|
-					dims.each do |d|
-						d.check(INT, @tabla)
-						d.eval(@tabla)
+				l = simbolo.tipo.dimensiones
+				i = 0
+				while i < l.length
+					j = 0
+					while j < l[i].length
+						l[i][j].check(INT, @tabla)
+						l[i][j] = l[i][j].eval(@tabla)
+						j += 1
 					end
-				end			
+					i += 1
+				end	
 			end
 		end
 		# evalúo primero las asignaciones del with y luego el resto de instrucciones
@@ -212,7 +258,9 @@ class Arbol_Rep_Det
 		str
 	end
 
-	def set_tabla_padre(padre) end
+	def set_tabla_padre(padre)
+		@instruccion.set_tabla_padre(padre)
+	end
 
 	def tabla_to_s(nivel=0)
 		""
@@ -227,7 +275,6 @@ class Arbol_Rep_Det
 	end
 	
 	def eval(tabla_sim)
-		#binding.pry
 		step = @step.eval(tabla_sim)
 
 		if step == 0
@@ -430,7 +477,7 @@ end
 class Arbol_Expr_Matr
 	def check (tipo, tabla_sim)
 		# Si espero algo que no es matriz, error
-		if tipo.tipo != "matrix"
+		if tipo and tipo.tipo != "matrix"
 			raise ErrorTipo.new(@posicion,tipo_op_izq,tipo)
 		end
 		tipo_op_izq = @izq.check(tipo, tabla_sim)
@@ -444,17 +491,58 @@ class Arbol_Expr_Matr
 			return ErrorFormaIndexacion.new(@der.posicion,tipo_op_der.forma,tipo_op_izq.forma)
 		end
 	end
+	def eval(tabla_sim)
+		# El único operador binario de matrices es concatenación
+		tipo_izq = @izq.check(nil,tabla_sim)
+		tipo_der = @izq.check(nil,tabla_sim)
+		op_izq = @izq.eval(tabla_sim)
+		op_der = @der.eval(tabla_sim)
+		if !tipo_izq.dimensiones.empty?
+			tipo_izq.dimensiones[-1][-1] += tipo_der.dimensiones[-1][-1]  
+		end
+		tipo_res = tipo_izq
+		if tipo_izq.dimensionalidad > 1
+			res = []
+			i = 0
+			izq_flat = []
+			der_flat = []
+			while i < op_izq.length
+				izq_flat << op_izq[i].flatten
+				der_flat << op_der[i].flatten
+				i += 1
+			end
+			i = 0
+			while i < op_izq.length
+				res << (izq_flat[i] + der_flat[i]).nest(tipo_izq.dimensionalidad-2)
+				i += 1
+			end
+		else
+			res = op_izq + op_der
+		end
+		return res
+	end
 end
 
 class Arbol_Expr_Unaria_Matr
 	def check (tipo, tabla_sim)
 		# Chequeamos que se esté esperando una matriz
-		if tipo.tipo != "matrix"
+		if tipo and tipo.tipo != "matrix"
 			raise ErrorTipo.new(@posicion,tipo_operando,tipo)
 		end
 		# Chequeamos que el operando concuerde con el tipo matriz esperado
 		tipo_operando = @der.check(tipo, tabla_sim)
 		return tipo_operando
+	end
+	def eval (tabla_sim)
+		operador = @izq
+		operando = @der.eval(tabla_sim)
+		case operador
+			when "?"
+				return operando.transpose
+			when "$"
+				last = operando.pop
+				return operando.unshift(last)
+		end
 	end
 end
 
@@ -526,6 +614,7 @@ class Arbol_Literal_Num
 end
 
 class Arbol_Literal_Matr
+	attr_accessor :valor
 	# Redefinimos el constructor de literal matriz para ajustarse a las necesidades
 	def initialize (lista, tkInicio)
 		# Si es un token, entonces guardo como valor el valor, si no, guardo directamente lo pasado.
@@ -537,11 +626,11 @@ class Arbol_Literal_Matr
 	def calcularDimensionalidad
 		dim = 1
 		chequeo = true
-		dim_ant = 0
+		dim_ant = nil
 		@valor.each do |elem|
-			# Chequear que los tipos de los valores sean iguales
+			# Chequear que los tipos de los valores sean iguales	
 			dim_elem = elem.calcularDimensionalidad
-			if dim_ant
+			if !dim_ant.nil?
 				if dim_ant != dim_elem
 					raise ErrorDimensiones.new(@posicion,dim_ant,dim_elem)
 				end
@@ -550,9 +639,33 @@ class Arbol_Literal_Matr
 		end
 		return dim + dim_ant
 	end
+	def calcularTamano
+		tam = @valor.calcularTamano
+		if tam.nil?
+			raise ErrorTamanoMatriz.new(@posicion)
+		end
+		return tam
+	end
 	def check (tipo, tabla_sim)
 		# Sacamaos la dimensionalidad del tipo esperado
-		dim = tipo.dimensionalidad
+		dim = tipo ? tipo.dimensionalidad : self.calcularDimensionalidad
+		if tipo.nil?
+			if !@valor.empty?
+				tipo_hijos = @valor[0].check(tipo, tabla_sim)
+				@valor.each do |e|
+					e.check(tipo_hijos, tabla_sim)
+				end				
+				if dim == 1
+					tipo_elems = tipo_hijos
+				elsif dim > 1
+					tipo_elems = tipo_hijos.tipo_param
+				end
+				tipo_elems.tipo_param = nil
+				return Tipo.new("matrix",[],tipo_elems,dim,[],true)
+			else
+				# Caso lista vacia
+			end
+		end
 		# El tipo esperado de los elementos de la matriz es una matriz con una dim menos, o si es de una dimension, el tipo de sus elementos
 		if dim > 1
 			tipo_esperado_elems = Tipo.new("matrix",tipo.dimensiones,tipo.tipo_param,dim-1,[],true)
@@ -581,13 +694,29 @@ class Arbol_Literal_Matr
 		return Tipo.new("matrix",[],tipo_esperado_param,dim,[],true)
 	end
 	def eval (tabla_sim)
-
+		tam = self.calcularTamano # Si falla el metodo lanza error
+		lelems = @valor.eval(tabla_sim)
+		self.valor = lelems
 	end
 
 end
 
 class Arbol_Indexacion
 	def check (tipo, tabla_sim)
+		tipo_izq = @izq.check(nil, tabla_sim)
+		forma = @izq.class == Arbol_Variable ? @izq.buscar(tabla_sim).tipo.forma : []
+		index_dim = @der.length # Cuantas dimensiones se estan indexando
+		if !forma.empty? and @der.length != forma[0]
+			raise ErrorFormaIndexacion.new(@izq.posicion,@der.length,forma.length)
+		end
+		if tipo.nil?
+			if tipo_izq.dimensionalidad - index_dim >= 1
+				return Tipo.new("matrix",[],tipo_izq.tipo_param,tipo_izq.dimensionalidad-1,[],true)
+			else
+				return tipo_izq.tipo_param
+			end
+		end
+
 		index_dim = @der.length # Cuantas dimensiones se estan indexando
 		tipo_esperado_param = tipo.dimensionalidad > 0 ? tipo.tipo_param : tipo
 		# Se espera que el operando sea una matriz de dimension del tipo esperado + dim indexacion,
@@ -595,15 +724,16 @@ class Arbol_Indexacion
 		tipo_esperado_operando = Tipo.new("matrix",[],tipo_esperado_param,tipo.dimensionalidad+index_dim,[],true)
 		tipo_operando = @izq.check(tipo_esperado_operando, tabla_sim)
 		
-		if tipo_operando.tipo != "matrix"
-			raise ErrorTipo.new(@posicion,tipo_operando,tipo)
-		end
 		# Si la matriz no tiene forma (literal matr) o si la forma de indexacion coincide
 		# con la forma que espera este tipo matriz ser indexada, pasa
+
 		if tipo_operando.forma.empty? or index_dim == tipo_operando.forma[0]
 			# El tipo resultante tendra tantas dimensiones menos como las que se indexen
 			dimensionalidad = tipo_operando.dimensionalidad - index_dim
 			forma = !tipo_operando.forma.empty? ? tipo_operando.forma.drop(1) : []
+			if tipo.forma != forma
+				return ErrorFormaIndexacion.new(@der.posicion,tipo_op_der.forma,tipo_op_izq.forma)
+			end
 			dimensiones = !tipo_operando.dimensiones.empty? ? tipo_operando.dimensiones.drop(1) : []
 			# Si la dimensionalidad resultante es >= 1, es una matriz, si no es el tipo de los elementos
 			if dimensionalidad >= 1
@@ -619,6 +749,22 @@ class Arbol_Indexacion
 			end
 		end
 	end
+	def eval (tabla_sim)
+		indices = @der.eval(tabla_sim)
+		# Sacamos los tamaños de las dimensiones indexadas
+		tam = @izq.eval(tabla_sim).calcularTamano[0...indices.length]
+		
+		tam.each_with_index do |tam_i, i| 
+			if tam_i <= indices[i]
+				raise ErrorIndexacionFueraLimites.new(@izq.posicion,indices,tam)
+			end
+		end
+		matr = @izq.eval(tabla_sim)
+		indices.each do |i|
+			matr = matr[i]
+		end
+		return matr
+	end
 end
 
 class Arbol_Read
@@ -629,24 +775,22 @@ class Arbol_Read
 			if e.protegida
 				raise ErrorModificacionVariableProtegida.new(pos,variable)
 			end
-			if e.tipo.tipo != "matrix"
-				return e.tipo
-			else
-				raise ErrorTipo.new(pos,tipo,INT,BOOL,CHAR)
-			end
+			return e.tipo
 		end
 	end
 	def eval (tabla_sim)
-		simbolo = @valor.buscar(tabla_sim)
 		valor = $stdin.gets.chomp
+		if @valor.class == Arbol_Variable
+			simbolo = @valor.buscar(tabla_sim)
+		else
+			simbolo = @valor.izq.buscar(tabla_sim)
+		end
 		tipo = simbolo.tipo
-
 		if tipo.tipo == "matrix"
 			if valor[0] == "{" and valor[-1] == "}"
 				literal_str = valor.gsub!('{','[').gsub!('}',']')
 				begin 
-					lista = Kernel::eval(literal_str)
-					
+					rval = Kernel::eval(literal_str)	
 				rescue SyntaxError
 					raise ErrorLectura.new(@posicion,"matrix")
 				end
@@ -658,33 +802,59 @@ class Arbol_Read
 		case tipo
 			when INT
 				begin
-					simbolo.valor = Integer(valor)
+					rval = Integer(valor)
 				rescue ArgumentError
 					raise ErrorLectura.new(@posicion, "int")
 				end
 			when BOOL
 				if valor == "true"
-					simbolo.valor = true
+					rval = true
 				elsif valor == "false"
-					simbolo.valor = false
+					rval = false
 				else
 					raise ErrorLectura.new(@posicion, "bool")
 				end
 			when CHAR
 				if valor.match (/([^'\\]|\\n|\\t|\\'|\\\\)$/)
-					simbolo.valor = $1
+					rval = $1
 				else
 					raise ErrorLectura.new(@posicion, "char")
 				end	
+		end	
+
+		if @valor.class == Arbol_Variable
+			simbolo.valor = rval
+		else
+			indices = @valor.der.eval(tabla_sim)
+			matr = simbolo.valor
+			i = 0
+			while i < indices.length
+				matr = matr[indices[i]]
+				i += 1
+			end
+			if matr.class == Array
+				i = 0
+				while i < indices.length
+					matr[i] = rval[i]
+					i += 1
+				end
+			else
+				i = 0
+				while i < indices.length-1
+					matr = matr[indices[i]]
+					i += 1
+				end
+				matr[indices[-1]] = rval
+			end
 		end
 	end
 end
 class Arbol_Print
 	def check (tipo, tabla_sim)
-		@valor.check(nil,tabla_sim)
+		v = @valor.check(nil,tabla_sim)
 	end
 	def eval (tabla_sim)
-		puts @valor.eval(tabla_sim)
+		puts @valor.eval(tabla_sim).to_s
 	end
 end
 
@@ -719,19 +889,72 @@ end
 
 class Arbol_Asignacion
 	def check(tipo, tabla_sim)
-		pos = @der.posicion # Posición del valor asignado
-		identificador = @izq.valor
-		tipo_var = @izq.check(nil, tabla_sim)
-		sim_var = @izq.buscar(tabla_sim)
-		if (sim_var.protegida)
-			raise ErrorModificacionVariableProtegida.new(pos,identificador)
+		if @izq.class == Arbol_Variable
+			pos = @der.posicion # Posición del valor asignado
+			identificador = @izq.valor
+			tipo_var = @izq.check(nil, tabla_sim)
+			sim_var = @izq.buscar(tabla_sim)
+			if (sim_var.protegida)
+				raise ErrorModificacionVariableProtegida.new(pos,identificador)
+			end
+			rval_tipo = @der.check(tipo_var,tabla_sim)
+			# Si pasa todo esto, cambiamos el tipo del literal (dimensiones y forma)
+			rval_tipo = tipo_var
+		# Indexacion
+		else
+			pos = @der.posicion # Posición del valor asignado
+			identificador = @izq.valor
+			tipo_var = @izq.izq.check(nil, tabla_sim)
+			sim_var = @izq.izq.buscar(tabla_sim)
+			if (sim_var.protegida)
+				raise ErrorModificacionVariableProtegida.new(pos,identificador)
+			end
+			rval_tipo = tipo_var.dup
+			rval_tipo.dimensiones = rval_tipo.dimensiones[1...(rval_tipo.dimensiones.length)]
+			binding.pry
+			rval_tipo.dimensionalidad -= @izq.der.length
+			if rval_tipo.dimensionalidad == 0
+				rval_tipo = rval_tipo.tipo_param
+			end
+			rval_tipo = @der.check(rval_tipo,tabla_sim)
+			# Si pasa todo esto, cambiamos el tipo del literal (dimensiones y forma)
 		end
-		rval_tipo = @der.check(tipo_var,tabla_sim)
-		# Si pasa todo esto, cambiamos el tipo del literal (dimensiones y forma)
-		rval_tipo = tipo_var
 	end
 	def eval (tabla_sim)
-		sim_var = @izq.buscar(tabla_sim)
-		sim_var.valor = @der.eval(tabla_sim)
+		rval = @der.eval(tabla_sim)
+		if @izq.class == Arbol_Variable
+			sim_var = @izq.buscar(tabla_sim)
+			if sim_var.tipo.tipo == "matrix"
+				if rval.calcularTamano != sim_var.tipo.dimensiones.flatten
+					raise ErrorTamanoMatriz.new(@der.posicion) # tentativo
+				end
+			end
+			sim_var.valor = rval
+		# Indexacion
+		else
+			sim_var = @izq.izq.buscar(tabla_sim)
+			indices = @izq.der.eval(tabla_sim)
+			matr = sim_var.valor
+			i = 0
+			while i < indices.length
+				matr = matr[indices[i]]
+				i += 1
+			end
+			if matr.class == Array
+				i = 0
+				while i < matr.length
+					matr[i] = rval[i]
+					i += 1
+				end
+			else
+				i = 0
+				matr = sim_var.valor 
+				while i < indices.length-1
+					matr = matr[indices[i]]
+					i += 1
+				end
+				matr[indices[-1]] = rval
+			end
+		end
 	end
 end

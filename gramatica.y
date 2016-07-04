@@ -83,7 +83,6 @@ class Parser
 	rule 
 		bloque: 'with' declaraciones 'begin' instruccion 'end'
 				{ tabla = TablaSimbolos.new(val[1])
-				  val[3].set_tabla_padre(tabla)
 				  result = ArbolBloque.new(val[3],tabla)
 				}
 			  | 'begin' instruccion 'end' {
@@ -282,11 +281,14 @@ if l.errores.empty?
 	begin
 		p = Parser.new(l.tokens)
 		x = p.parse
+		x.set_tabla_padre
 		x.check
 		x.eval
 	rescue ErrorSintactico => e
 		puts "Error sintactico: #{e}"
 	rescue ErrorEstatico => e
 		puts "Error estático: #{e}"
+	rescue ErrorDinamico => e
+		puts "Error dinámico: #{e}"
 	end
 end

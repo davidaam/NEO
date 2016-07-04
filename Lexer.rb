@@ -124,9 +124,9 @@ class Lexer
 
   def tokenizeWord(palabra,pos)
 
+
     conjuntoTokens = []
     finTk = pos
-
     # Por cada palabra chequeo en orden de precedencia si hace match con la regexp de algún token
     palabra.each do |laPalabra|
       token = nil
@@ -185,6 +185,7 @@ class Lexer
       # Agrego espacios a los lados de los char por si hay algo pegado que deba ser analizado
       palabra_s = palabra_s.gsub(/'([^']| \\ \\ | \\ n| \\ t| \\ ')'/,' \0 ')
 
+      
       # Si la palabra contiene un char, borro los espacios innecesarios agregados anteriormente
       if palabra_s.match(/'([^']| \\ \\ | \\ n| \\ t| \\ ')' /)
         posChar = $~.offset(0)
@@ -199,7 +200,8 @@ class Lexer
       arrTemp = Array.new(palabra)
       # Voy llevando la posición en el arreglo de la palabra que estoy preprocesando
       i = 0
-      arrTemp.each do |palabraCandidata|
+      while i < palabra.length
+        palabraCandidata = palabra[i]
         # Si tengo numero e id pegados, los separo para analizarlos por separado
         if palabraCandidata.match(/^[0-9]+([a-zA-Z_]+[0-9]*)+/)
           # Separo las palabras y las agrego en el arreglo palabraArr
@@ -216,14 +218,13 @@ class Lexer
           simbolos_par.each do |simbolo|
             # Por cada símbolo chequeo si la palabra chequeada es el primer caracter del símbolo, y si la siguiente
             # palabra en el arreglo es el segundo caracter del símbolo
-            if palabraCandidata.match Regexp.escape(simbolo[0])
+            if palabraCandidata == simbolo[0]
               if palabra[i+1] == simbolo[1]
                 # Si efectivamente pasa esto, entonces uno el primer caracter con el segundo,
                 # y borro el segundo caracter del arreglo
                 palabra[i] += simbolo[1]
                 palabra.delete_at(i+1)
-                # Le resto uno porque en realidad no debería moverme, pero como siempre le sumo 1 entonces se cancela
-                i -= 1
+                break
               end
             end
           end
